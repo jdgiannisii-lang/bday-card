@@ -168,18 +168,13 @@
     opacity: 0;
   }
   .polaroid .pic {
-    width: 150px;
-    height: 138px;
+    width: 146px;
+    height: 172px;
     border-radius: 2px;
-    background:
-      radial-gradient(120% 120% at 30% 25%, #f4dfe2 0%, #eccdd2 55%, #e3bcc4 100%);
-    display: grid;
-    place-items: center;
-  }
-  .polaroid .pic span {
-    font-family: 'Caveat', cursive;
-    font-size: 19px;
-    color: #b07f86;
+    object-fit: cover;
+    object-position: center 40%;
+    display: block;
+    background: #eccdd2;
   }
   .polaroid .cap {
     position: absolute;
@@ -345,6 +340,14 @@
     transition: opacity .4s;
   }
   .card.opened .open-label { opacity: 0; }
+  .dedication {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(15px, 4vw, 18px);
+    line-height: 1.32;
+    color: var(--ink-soft);
+    max-width: 24ch;
+    margin-top: 2px;
+  }
   .card:hover:not(.opened) .seal { animation-play-state: paused; transform: rotate(-7deg) scale(1.07); }
 
   /* back of the cover, glimpsed while it swings */
@@ -421,11 +424,10 @@
       <!-- INSIDE: the handwritten note -->
       <div class="face inside">
 
-        <!-- ✏️ PHOTO: replace the .pic block with an image when ready, e.g.
-             <img class="pic" src="us.jpg" alt="" />  (square photos sit best) -->
+        <!-- ✏️ PHOTO: swap the src to change the picture. -->
         <div class="polaroid">
           <div class="tape"></div>
-          <div class="pic"><span>your photo here</span></div>
+          <img class="pic" src="photo.jpg" alt="Rachel and JD" />
           <div class="cap">us, this year</div>
         </div>
 
@@ -460,6 +462,7 @@
             <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
           </div>
           <div class="open-label">press to open</div>
+          <div class="dedication">To my favorite person, my best friend, my snuggle buddy, my princess, and my everything.</div>
         </div>
       </div>
 
