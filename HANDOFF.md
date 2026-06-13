@@ -111,7 +111,7 @@ This card was deliberately redesigned to avoid an AI-generated look, applying th
 ## Validation (do this before every push; no browser here)
 ```bash
 # 1) em-dash ban (must print 0). Uses a printf escape so this file stays clean.
-grep -c "$(printf '—')" index.html
+grep -c "$(printf '\xe2\x80\x94')" index.html
 # 2) JS must parse: extract the inline <script> and check
 node -e '
 const fs=require("fs");const L=fs.readFileSync("index.html","utf8").split("\n");
