@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Happy Birthday 💕</title>
+
+<!--
+  ============================================================================
+   💖  DIGITAL BIRTHDAY CARD  💖
+  ============================================================================
+   Everything you need to personalize is in the CONFIG block just below in the
+   <script> at the bottom, PLUS the two clearly marked spots in the HTML:
+
+     1.  HER NAME ........  search for  <!-- ✏️ HER NAME -->
+     2.  PHOTO ...........  search for  <!-- ✏️ PHOTO -->
+     3.  THE MESSAGE .....  search for  <!-- ✏️ MESSAGE GOES HERE -->
+
+   To share: this is a single self-contained file. Just open it in a browser,
+   or upload it to any static host (GitHub Pages, Netlify, Vercel) and send
+   the link. No build step, no dependencies.
+  ============================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --pink-1: #ff4d8d;
+    --pink-2: #ff7eb3;
+    --pink-3: #ff9ec6;
+    --magenta: #ff2e93;
+    --coral: #ff6b6b;
+    --gold: #ffd86b;
+    --cream: #fff5fa;
+    --ink: #6b1f44;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    overflow: hidden;
+    background:
+      radial-gradient(1200px 800px at 20% 15%, #ffe3f1 0%, transparent 55%),
+      radial-gradient(1000px 700px at 85% 80%, #ffd9ec 0%, transparent 55%),
+      linear-gradient(135deg, #ffb3d9 0%, #ff8fc4 38%, #ffa9d4 70%, #ffc6e3 100%);
+    background-attachment: fixed;
+  }
+
+  /* ---------- Layout ---------- */
+  .stage {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    perspective: 1600px;
+    perspective-origin: 50% 45%;
+  }
+
+  /* Soft glowing halo behind the card */
+  .halo {
+    position: absolute;
+    width: min(120vw, 900px);
+    height: min(120vw, 900px);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,180,214,.25) 35%, transparent 70%);
+    filter: blur(8px);
+    animation: haloPulse 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes haloPulse {
+    0%, 100% { transform: scale(1);   opacity: .8; }
+    50%      { transform: scale(1.08); opacity: 1; }
+  }
+
+  /* ---------- The card ---------- */
+  .card {
+    position: relative;
+    width: min(86vw, 360px);
+    height: min(74vh, 480px);
+    transform-style: preserve-3d;
+    cursor: pointer;
+    transition: transform .9s cubic-bezier(.2,.7,.2,1);
+    transform: rotateX(8deg) rotateZ(-1deg);
+    animation: floatCard 5.5s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes floatCard {
+    0%, 100% { transform: rotateX(8deg) rotateZ(-1deg) translateY(0); }
+    50%      { transform: rotateX(8deg) rotateZ(-1deg) translateY(-14px); }
+  }
+
+  /* When opened we stop the float and let the inside take focus */
+  .card.opened { animation: none; cursor: default; transform: rotateX(4deg) translateX(22%) scale(1.02); }
+  @media (max-width: 560px) {
+    .card.opened { transform: rotateX(2deg) translateX(0) translateY(-6%) scale(1); }
+  }
+
+  .face {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow: hidden;
+    box-shadow:
+      0 30px 60px rgba(157, 23, 77, .35),
+      0 10px 22px rgba(157, 23, 77, .25);
+  }
+
+  /* ----- The inside (revealed) ----- */
+  .inside {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 30px 26px;
+    text-align: center;
+    background:
+      radial-gradient(120% 80% at 50% -10%, #ffffff 0%, var(--cream) 45%, #ffe9f3 100%);
+    border: 1px solid rgba(255,255,255,.7);
+    overflow-y: auto;
+  }
+  .inside::-webkit-scrollbar { width: 0; }
+
+  .photo-frame {
+    flex: 0 0 auto;
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    padding: 5px;
+    background: linear-gradient(135deg, var(--magenta), var(--gold));
+    box-shadow: 0 8px 20px rgba(255,46,147,.35);
+    opacity: 0;
+    transform: translateY(16px) scale(.9);
+  }
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    background: #ffe3f1;
+  }
+
+  .inside h1 {
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(30px, 8vw, 42px);
+    margin: 4px 0 0;
+    line-height: 1.05;
+    color: var(--magenta);
+    text-shadow: 0 2px 0 #fff, 0 6px 16px rgba(255,46,147,.25);
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  .inside .msg {
+    font-size: clamp(14px, 3.6vw, 16px);
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--ink);
+    max-width: 30ch;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  .inside .msg p { margin: 0 0 .8em; }
+
+  .inside .signoff {
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(20px, 5vw, 26px);
+    color: var(--pink-1);
+    margin-top: 2px;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  /* staggered reveal once the card is open */
+  .opened .photo-frame { animation: rise .7s .55s ease-out forwards; }
+  .opened .inside h1    { animation: rise .7s .70s ease-out forwards; }
+  .opened .inside .msg  { animation: rise .7s .88s ease-out forwards; }
+  .opened .inside .signoff { animation: rise .7s 1.06s ease-out forwards; }
+  @keyframes rise {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ----- The cover (front flap that swings open) ----- */
+  .cover {
+    transform-origin: left center;
+    transform: rotateY(0deg);
+    transition: transform 1.05s cubic-bezier(.6,.02,.1,1);
+    z-index: 3;
+    background:
+      radial-gradient(140% 120% at 30% 20%, #ff9ec6 0%, var(--pink-1) 45%, var(--magenta) 100%);
+    border: 1px solid rgba(255,255,255,.45);
+  }
+  .card.opened .cover { transform: rotateY(-162deg); box-shadow: -20px 18px 40px rgba(120,10,60,.3); }
+
+  /* The back of the cover (visible when swung open) */
+  .cover-back {
+    transform: rotateY(180deg);
+    background: linear-gradient(135deg, #ffe3f1, #ffd0e6);
+    display: grid;
+    place-items: center;
+    color: var(--pink-1);
+  }
+  .cover-back .heart-mini { font-size: 60px; opacity: .5; filter: drop-shadow(0 6px 10px rgba(255,46,147,.3)); }
+
+  /* glossy sheen sweeping across the cover */
+  .cover .sheen {
+    position: absolute;
+    top: -60%;
+    left: -30%;
+    width: 60%;
+    height: 220%;
+    background: linear-gradient(105deg, transparent, rgba(255,255,255,.45), transparent);
+    transform: rotate(8deg);
+    animation: sheen 4.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes sheen {
+    0%   { left: -40%; }
+    55%  { left: 130%; }
+    100% { left: 130%; }
+  }
+
+  .cover-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    padding: 24px;
+    color: #fff;
+  }
+
+  .cover-content .for-name {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-size: 12px;
+    opacity: .9;
+  }
+  .cover-content .name {
+    font-family: 'Dancing Script', cursive;
+    font-weight: 700;
+    font-size: clamp(34px, 11vw, 56px);
+    line-height: 1;
+    margin: 2px 0 6px;
+    text-shadow: 0 3px 0 rgba(157,23,77,.25), 0 10px 24px rgba(120,10,60,.35);
+  }
+  .cover-content .title {
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(20px, 6vw, 30px);
+    opacity: .95;
+    margin-bottom: 4px;
+  }
+
+  /* The big beating heart on the cover */
+  .heart {
+    position: relative;
+    width: 86px;
+    height: 86px;
+    margin: 10px 0 6px;
+    animation: beat 1.25s ease-in-out infinite;
+    filter: drop-shadow(0 10px 16px rgba(120,10,60,.45));
+  }
+  .heart::before, .heart::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 44px;
+    height: 70px;
+    border-radius: 44px 44px 0 0;
+    background: linear-gradient(160deg, #fff 0%, #ffd0e6 35%, #ff5fa2 100%);
+  }
+  .heart::before { left: 43px; transform: rotate(-45deg); transform-origin: 0 100%; }
+  .heart::after  { left: 0;    transform: rotate(45deg);  transform-origin: 100% 100%; }
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    14%      { transform: scale(1.18); }
+    28%      { transform: scale(1); }
+    42%      { transform: scale(1.12); }
+    56%      { transform: scale(1); }
+  }
+
+  .tap-hint {
+    position: absolute;
+    bottom: 18px;
+    left: 0; right: 0;
+    text-align: center;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 400;
+    letter-spacing: .04em;
+    opacity: .92;
+    animation: hintBob 1.8s ease-in-out infinite;
+  }
+  .tap-hint span { display: inline-block; }
+  @keyframes hintBob {
+    0%, 100% { transform: translateY(0); opacity: .65; }
+    50%      { transform: translateY(5px); opacity: 1; }
+  }
+  .card.opened .tap-hint { opacity: 0; transition: opacity .3s; }
+
+  /* ---------- Canvas for hearts + glitter ---------- */
+  #fx {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* ---------- Replay button ---------- */
+  .replay {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    z-index: 60;
+    border: none;
+    cursor: pointer;
+    padding: 11px 22px;
+    border-radius: 999px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--magenta);
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 8px 22px rgba(157,23,77,.28);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .4s, transform .4s, background .2s;
+    backdrop-filter: blur(4px);
+  }
+  .replay.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .replay:hover { background: #fff; transform: translateX(-50%) translateY(-2px); }
+  .replay:active { transform: translateX(-50%) translateY(0) scale(.97); }
+
+  /* Reduced-motion: keep it gentle */
+  @media (prefers-reduced-motion: reduce) {
+    .card, .halo, .heart, .sheen, .tap-hint, .floater { animation: none !important; }
+    .card { transition: none; }
+    .cover { transition: transform .5s ease; }
+    .opened .photo-frame, .opened .inside h1, .opened .inside .msg, .opened .inside .signoff {
+      animation: none; opacity: 1; transform: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Ambient drifting hearts live here (added by JS) -->
+  <div class="floaters" id="floaters" aria-hidden="true"></div>
+
+  <div class="stage">
+    <div class="halo"></div>
+
+    <div class="card" id="card" role="button" tabindex="0" aria-label="Open your birthday card">
+
+      <!-- INSIDE of the card (revealed after opening) -->
+      <div class="face inside">
+
+        <!-- ✏️ PHOTO: replace the src below with your photo (a file next to this
+             page like "us.jpg", or any image URL). Square images look best. -->
+        <div class="photo-frame">
+          <img src="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'&gt;&lt;rect width='200' height='200' fill='%23ffe3f1'/&gt;&lt;text x='100' y='112' font-size='64' text-anchor='middle' fill='%23ff5fa2'&gt;📷&lt;/text&gt;&lt;/svg&gt;"
+               alt="Add a photo here" />
+        </div>
+
+        <!-- ✏️ HER NAME (also shown on the cover below) -->
+        <h1>Happy Birthday,<br />My Love</h1>
+
+        <!-- ✏️ MESSAGE GOES HERE -------------------------------------------
+             Replace the paragraphs below with your own birthday message.
+             Keep it in <p>...</p> tags; add or remove paragraphs freely. -->
+        <div class="msg">
+          <p>This is where your message will go. ✨ Write something sweet
+          right here — about how much she means to you, a favorite memory,
+          or all the things you love about her.</p>
+          <p>For now this is just placeholder text so you can see how the
+          finished card will look. Swap it out whenever your words are ready 💝</p>
+        </div>
+        <!-- ✏️ END MESSAGE ----------------------------------------------- -->
+
+        <!-- ✏️ Sign it however you like -->
+        <div class="signoff">— With all my love ❤️</div>
+      </div>
+
+      <!-- COVER (the front flap that swings open on click) -->
+      <div class="face cover">
+        <div class="sheen"></div>
+        <div class="cover-content">
+          <div class="title">Happy Birthday</div>
+          <div class="heart" aria-hidden="true"></div>
+          <!-- ✏️ HER NAME -->
+          <div class="for-name">to my</div>
+          <div class="name">Beautiful</div>
+        </div>
+        <div class="tap-hint"><span>👆 tap to open</span></div>
+      </div>
+
+      <!-- Back of the cover (seen briefly while it swings) -->
+      <div class="face cover cover-back" aria-hidden="true">
+        <div class="heart-mini">💗</div>
+      </div>
+
+    </div>
+  </div>
+
+  <canvas id="fx" aria-hidden="true"></canvas>
+
+  <button class="replay" id="replay" type="button">↺ Replay</button>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ======================================================================
+     ⚙️  CONFIG — quick knobs (optional). The text/photo live in the HTML
+         above; these just tune the celebration.
+     ====================================================================== */
+  var CONFIG = {
+    burstHearts: 70,    // hearts in the opening explosion
+    burstGlitter: 160,  // glitter/confetti specks in the explosion
+    ambientHearts: 14   // soft hearts drifting in the background
+  };
+
+  var reduceMotion = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var card    = document.getElementById("card");
+  var replay  = document.getElementById("replay");
+  var canvas  = document.getElementById("fx");
+  var ctx     = canvas.getContext("2d");
+  var floaters = document.getElementById("floaters");
+
+  /* ---------- Canvas sizing (crisp on retina / phones) ---------- */
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W = 0, H = 0;
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width  = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  /* ---------- Particle system ---------- */
+  var particles = [];
+  var PINKS = ["#ff4d8d", "#ff2e93", "#ff7eb3", "#ff9ec6", "#ff6b6b", "#ffd86b", "#ffffff"];
+  var GLITTER = ["#ff8fc4", "#ffd86b", "#ffffff", "#ff5fa2", "#ffc6e3", "#ffe08a"];
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+
+  // Draw a heart path centered at (0,0) with size s
+  function heartPath(c, s) {
+    c.beginPath();
+    var t;
+    for (t = 0; t <= Math.PI * 2 + 0.1; t += 0.35) {
+      var x = 16 * Math.pow(Math.sin(t), 3);
+      var y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+      var px = (x / 16) * s;
+      var py = (-y / 16) * s;
+      if (t === 0) c.moveTo(px, py); else c.lineTo(px, py);
+    }
+    c.closePath();
+  }
+
+  function spawnBurst() {
+    if (reduceMotion) return;
+    // Origin: roughly the center of the card / screen
+    var ox = W / 2;
+    var oy = H * 0.46;
+
+    var i;
+    for (i = 0; i < CONFIG.burstHearts; i++) {
+      var ang = rand(0, Math.PI * 2);
+      var spd = rand(3, 13);
+      particles.push({
+        type: "heart",
+        x: ox + rand(-30, 30),
+        y: oy + rand(-30, 30),
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd - rand(2, 6),
+        g: rand(0.12, 0.26),
+        size: rand(9, 22),
+        rot: rand(0, Math.PI * 2),
+        vr: rand(-0.2, 0.2),
+        color: pick(PINKS),
+        life: 1,
+        decay: rand(0.006, 0.013)
+      });
+    }
+    for (i = 0; i < CONFIG.burstGlitter; i++) {
+      var a2 = rand(0, Math.PI * 2);
+      var s2 = rand(4, 16);
+      particles.push({
+        type: "glitter",
+        x: ox + rand(-20, 20),
+        y: oy + rand(-20, 20),
+        vx: Math.cos(a2) * s2,
+        vy: Math.sin(a2) * s2 - rand(1, 5),
+        g: rand(0.1, 0.22),
+        size: rand(2, 5),
+        rot: rand(0, Math.PI * 2),
+        vr: rand(-0.4, 0.4),
+        color: pick(GLITTER),
+        life: 1,
+        decay: rand(0.008, 0.02),
+        tw: rand(0, Math.PI * 2) // twinkle phase
+      });
+    }
+    startLoop();
+  }
+
+  // A gentle continuous drizzle of hearts after opening (kept light)
+  var drizzleTimer = null;
+  function startDrizzle() {
+    if (reduceMotion) return;
+    stopDrizzle();
+    drizzleTimer = setInterval(function () {
+      if (document.hidden) return;
+      particles.push({
+        type: "heart",
+        x: rand(0, W),
+        y: -20,
+        vx: rand(-0.6, 0.6),
+        vy: rand(1, 2.4),
+        g: 0.01,
+        size: rand(8, 16),
+        rot: rand(0, Math.PI * 2),
+        vr: rand(-0.05, 0.05),
+        color: pick(PINKS),
+        life: 1,
+        decay: 0.004,
+        sway: rand(0, Math.PI * 2)
+      });
+      startLoop();
+    }, 320);
+  }
+  function stopDrizzle() { if (drizzleTimer) { clearInterval(drizzleTimer); drizzleTimer = null; } }
+
+  var rafId = null;
+  function startLoop() { if (!rafId) rafId = requestAnimationFrame(tick); }
+
+  function tick() {
+    ctx.clearRect(0, 0, W, H);
+    var alive = 0;
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      if (p.life <= 0) continue;
+
+      p.vy += p.g;
+      if (p.sway !== undefined) { p.sway += 0.04; p.x += Math.sin(p.sway) * 0.6; }
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.life -= p.decay;
+      p.vx *= 0.995;
+
+      if (p.y > H + 40 || p.life <= 0) { p.life = 0; continue; }
+      alive++;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+
+      if (p.type === "heart") {
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 6;
+        heartPath(ctx, p.size);
+        ctx.fill();
+      } else {
+        // glitter: twinkling little diamond/spark
+        p.tw += 0.3;
+        var tw = 0.5 + 0.5 * Math.sin(p.tw);
+        ctx.globalAlpha *= (0.35 + 0.65 * tw);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        var s = p.size * (0.7 + 0.6 * tw);
+        ctx.beginPath();
+        ctx.moveTo(0, -s); ctx.lineTo(s * 0.6, 0);
+        ctx.lineTo(0, s);  ctx.lineTo(-s * 0.6, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // compact occasionally so the array doesn't grow forever
+    if (particles.length > 600) {
+      particles = particles.filter(function (q) { return q.life > 0; });
+    }
+
+    if (alive > 0) {
+      rafId = requestAnimationFrame(tick);
+    } else {
+      ctx.clearRect(0, 0, W, H);
+      rafId = null;
+    }
+  }
+
+  /* ---------- Ambient background hearts (DOM, pre-open ambience) ---------- */
+  function buildFloaters() {
+    if (reduceMotion) return;
+    var emojis = ["💗", "💖", "💕", "🌸", "✨", "💘"];
+    var html = "";
+    for (var i = 0; i < CONFIG.ambientHearts; i++) {
+      var left = Math.random() * 100;
+      var dur = 9 + Math.random() * 10;
+      var delay = -Math.random() * dur;
+      var size = 14 + Math.random() * 22;
+      var op = 0.25 + Math.random() * 0.4;
+      html += '<span class="floater" style="left:' + left + 'vw;' +
+              'font-size:' + size + 'px;opacity:' + op + ';' +
+              'animation-duration:' + dur + 's;animation-delay:' + delay + 's;">' +
+              emojis[(Math.random() * emojis.length) | 0] + '</span>';
+    }
+    floaters.innerHTML = html;
+  }
+
+  /* ---------- Open / replay flow ---------- */
+  var isOpen = false;
+
+  function openCard() {
+    if (isOpen) return;
+    isOpen = true;
+    card.classList.add("opened");
+    // sync the burst with the flap swinging open
+    setTimeout(spawnBurst, reduceMotion ? 0 : 360);
+    setTimeout(startDrizzle, reduceMotion ? 0 : 1200);
+    setTimeout(function () { replay.classList.add("show"); }, reduceMotion ? 0 : 1400);
+  }
+
+  function resetCard() {
+    isOpen = false;
+    card.classList.remove("opened");
+    replay.classList.remove("show");
+    stopDrizzle();
+    // let the flap close, then you can open again
+  }
+
+  card.addEventListener("click", openCard);
+  card.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(); }
+  });
+
+  replay.addEventListener("click", function (e) {
+    e.stopPropagation();
+    resetCard();
+    setTimeout(openCard, 700);
+  });
+
+  // pause/resume cleanly when tab hidden
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && isOpen) startLoop();
+  });
+
+  /* ---------- Init ---------- */
+  buildFloaters();
+})();
+</script>
+
+<style>
+  /* Ambient floaters layer (kept here so the JS-built spans have a home) */
+  .floaters {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .floater {
+    position: absolute;
+    bottom: -40px;
+    will-change: transform, opacity;
+    animation-name: floatUp;
+    animation-timing-function: ease-in;
+    animation-iteration-count: infinite;
+    filter: drop-shadow(0 4px 6px rgba(255,46,147,.2));
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); }
+    50%  { transform: translateY(-55vh) translateX(20px) rotate(20deg); }
+    100% { transform: translateY(-110vh) translateX(-10px) rotate(-15deg); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .floaters { display: none; } }
+</style>
+
+</body>
+</html>
