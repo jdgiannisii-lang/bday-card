@@ -686,11 +686,11 @@
     /* keep the whole pile below the bottom of the card */
     var cardBottom = H / 2 + card.offsetHeight / 2;
     var floorY = H - 8 - cR;
-    var ceiling = cardBottom + 20;
+    var ceiling = cardBottom + 4;
     var rowH = cR * 1.9;
     var perRow = Math.max(4, Math.floor((W - margin * 2) / (cR * 2)));
     var maxRows = Math.max(1, Math.floor((floorY - ceiling) / rowH));
-    var desired = Math.max(29, Math.min(61, Math.round(W / 12)));
+    var desired = Math.max(39, Math.min(81, Math.round(W / 9)));
     var count = Math.min(desired, perRow * maxRows);
 
     for (var i = 0; i < count; i++) {
