@@ -89,17 +89,23 @@
     cursor: pointer;
     transition: transform 1s cubic-bezier(.22,.7,.18,1);
     transform: rotateX(6deg) rotateZ(-.6deg);
-    animation: settle 1.1s cubic-bezier(.2,.8,.2,1) both, sway 9s ease-in-out 1.1s infinite;
+    animation: settle 1.1s cubic-bezier(.2,.8,.2,1) both, eager 5s ease-in-out 1.1s infinite;
     will-change: transform;
   }
   @keyframes settle {
     from { opacity: 0; transform: rotateX(16deg) translateY(34px) scale(.94); }
     to   { opacity: 1; transform: rotateX(6deg) translateY(0) scale(1); }
   }
-  /* A barely-there idle drift, not a bounce. Motion that breathes. */
-  @keyframes sway {
-    0%, 100% { transform: rotateX(6deg) rotateZ(-.6deg) translateY(0); }
-    50%      { transform: rotateX(6deg) rotateZ(-.6deg) translateY(-7px); }
+  /* Idle: a slow breathe, then a quick little shimmy, like it's eager to be
+     opened. Amplitudes kept tiny on purpose. */
+  @keyframes eager {
+    0%, 64%, 100% { transform: rotateX(6deg) rotateZ(-.6deg) translate(0, 0); }
+    32%           { transform: rotateX(6deg) rotateZ(-.6deg) translate(0, -6px); }
+    70%           { transform: rotateX(6deg) rotateZ(-2deg)  translate(-2px, 0); }
+    74%           { transform: rotateX(6deg) rotateZ(1.2deg) translate(2px, 0); }
+    78%           { transform: rotateX(6deg) rotateZ(-1.4deg) translate(-2px, 0); }
+    82%           { transform: rotateX(6deg) rotateZ(.8deg)  translate(1px, 0); }
+    86%           { transform: rotateX(6deg) rotateZ(-.6deg) translate(0, 0); }
   }
 
   .card.opened {
