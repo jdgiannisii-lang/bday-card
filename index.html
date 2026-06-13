@@ -565,8 +565,6 @@
   <canvas id="fx" aria-hidden="true"></canvas>
   <button class="replay" id="replay" type="button">read it again</button>
 
-<!-- emoji confetti, via catdad/canvas-confetti -->
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script>
 (function () {
   "use strict";
@@ -666,32 +664,125 @@
     startLoop();
   }
 
-  /* Emoji confetti (🥰 / 🫰) via canvas-confetti. Skipped if reduced motion
-     or if the library failed to load. */
-  function emojiConfetti() {
-    if (reduceMotion || typeof confetti !== "function") return;
-    var scalar = 2;
-    var shapes = [
-      confetti.shapeFromText({ text: "🥰", scalar: scalar }), /* 🥰 */
-      confetti.shapeFromText({ text: "🫰", scalar: scalar })  /* 🫰 */
-    ];
-    function fire(opts) {
-      confetti(Object.assign({
-        particleCount: 20,
-        spread: 360,
-        startVelocity: 26,
-        gravity: 1.1,        /* pull them down so they rain into view */
-        decay: 0.92,
-        ticks: 420,          /* long life so they linger instead of fading fast */
-        flat: true,
-        shapes: shapes,
-        scalar: scalar,
-        origin: { x: 0.5, y: 0.4 }
-      }, opts));
+  /* ---------- Emoji balls (🥰 / 🫰) that drop in and pile up ----------
+     A small physics sim: they fall, collide with the walls/floor and each
+     other, never fade, and settle into a pile. The collision radius is a bit
+     larger than the glyph, so they rest with a little gap between them. The
+     count is capped so the pile stays below the card. */
+  var emojiBalls = [];
+  var EMOJIS = ["🥰", "🫰"];
+
+  function floorFor(b) { return H - 8 - b.cR; }
+
+  function dropEmojis() {
+    if (reduceMotion) return;
+    emojiBalls = [];
+    var size = 33;             /* glyph font size */
+    var vR = size * 0.46;      /* visual radius */
+    var cR = vR * 1.18;        /* collision radius: hitbox slightly larger */
+    var margin = cR + 6;
+
+    /* keep the whole pile below the bottom of the card */
+    var cardBottom = H / 2 + card.offsetHeight / 2;
+    var floorY = H - 8 - cR;
+    var ceiling = cardBottom + 20;
+    var rowH = cR * 1.9;
+    var perRow = Math.max(4, Math.floor((W - margin * 2) / (cR * 2)));
+    var maxRows = Math.max(1, Math.floor((floorY - ceiling) / rowH));
+    var desired = Math.max(22, Math.min(46, Math.round(W / 16)));
+    var count = Math.min(desired, perRow * maxRows);
+
+    for (var i = 0; i < count; i++) {
+      (function (idx) {
+        setTimeout(function () {
+          if (!isOpen) return;
+          emojiBalls.push({
+            x: rand(margin, W - margin),
+            y: -cR - rand(0, 90),
+            vx: rand(-0.6, 0.6), vy: rand(0, 2),
+            vR: vR, cR: cR, size: size,
+            rot: rand(-0.22, 0.22), vrot: rand(-0.05, 0.05),
+            char: pick(EMOJIS), still: 0, asleep: false
+          });
+          startLoop();
+        }, idx * 55);
+      })(i);
     }
-    fire({});
-    setTimeout(function () { fire({ particleCount: 14, startVelocity: 20 }); }, 220);
-    setTimeout(function () { fire({ particleCount: 10, scalar: scalar * 1.35, spread: 260 }); }, 460);
+  }
+
+  function updateEmoji() {
+    var n = emojiBalls.length, i, b;
+    if (n === 0) return false;
+    var g = 0.42, term = 16, drag = 0.999, friction = 0.84;
+
+    for (i = 0; i < n; i++) {
+      b = emojiBalls[i];
+      if (b.asleep) continue;
+      b.vy += g; if (b.vy > term) b.vy = term;
+      b.x += b.vx; b.y += b.vy; b.vx *= drag;
+      b.rot += b.vrot; b.vrot *= 0.94;
+      if (b.x < b.cR) { b.x = b.cR; b.vx = Math.abs(b.vx) * 0.3; }
+      else if (b.x > W - b.cR) { b.x = W - b.cR; b.vx = -Math.abs(b.vx) * 0.3; }
+      var fl = floorFor(b);
+      if (b.y >= fl) { b.y = fl; if (b.vy > 0) b.vy = 0; b.vx *= friction; b.vrot *= 0.4; }
+    }
+
+    /* a few relaxation passes for stable stacking */
+    for (var pass = 0; pass < 4; pass++) {
+      for (var a = 0; a < n; a++) {
+        var b1 = emojiBalls[a];
+        for (var c = a + 1; c < n; c++) {
+          var b2 = emojiBalls[c];
+          var dx = b2.x - b1.x, dy = b2.y - b1.y;
+          var minD = b1.cR + b2.cR, d2 = dx * dx + dy * dy;
+          if (d2 < minD * minD && d2 > 0.0001) {
+            var d = Math.sqrt(d2), nx = dx / d, ny = dy / d;
+            var corr = (minD - d) * 0.5;
+            b1.x -= nx * corr; b1.y -= ny * corr;
+            b2.x += nx * corr; b2.y += ny * corr;
+            var vn = (b2.vx - b1.vx) * nx + (b2.vy - b1.vy) * ny;
+            if (vn < 0) {
+              var imp = vn * 0.5;
+              b1.vx += nx * imp; b1.vy += ny * imp;
+              b2.vx -= nx * imp; b2.vy -= ny * imp;
+              if (vn < -0.6) { b1.asleep = b2.asleep = false; b1.still = b2.still = 0; }
+            }
+          }
+        }
+      }
+      for (i = 0; i < n; i++) {
+        b = emojiBalls[i];
+        if (b.x < b.cR) b.x = b.cR; else if (b.x > W - b.cR) b.x = W - b.cR;
+        var fl2 = floorFor(b); if (b.y > fl2) b.y = fl2;
+      }
+    }
+
+    var awake = false;
+    for (i = 0; i < n; i++) {
+      b = emojiBalls[i];
+      if (b.asleep) continue;
+      if (Math.abs(b.vx) + Math.abs(b.vy) < 0.25) {
+        if (++b.still > 12) { b.asleep = true; b.vx = b.vy = b.vrot = 0; }
+      } else b.still = 0;
+      if (!b.asleep) awake = true;
+    }
+    return awake;
+  }
+
+  function drawEmoji() {
+    if (emojiBalls.length === 0) return;
+    ctx.globalAlpha = 1;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (var i = 0; i < emojiBalls.length; i++) {
+      var b = emojiBalls[i];
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.rot);
+      ctx.font = b.size + "px 'Outfit', sans-serif";
+      ctx.fillText(b.char, 0, 1);
+      ctx.restore();
+    }
   }
 
   var drizzle = null;
@@ -758,8 +849,13 @@
       ctx.restore();
     }
     if (particles.length > 700) particles = particles.filter(function (q) { return q.life > 0; });
-    if (alive > 0) raf = requestAnimationFrame(tick);
-    else { ctx.clearRect(0, 0, W, H); raf = null; }
+
+    /* emoji pile: update + draw on top, keep the loop alive while any move */
+    var ballsAwake = updateEmoji();
+    drawEmoji();
+
+    if (alive > 0 || ballsAwake) raf = requestAnimationFrame(tick);
+    else { if (emojiBalls.length === 0) ctx.clearRect(0, 0, W, H); raf = null; }
   }
 
   /* ---------- Ambient petals (DOM) ---------- */
@@ -787,7 +883,7 @@
     if (scroller) scroller.scrollTop = 0;
     inside.classList.remove("read");
     setTimeout(burst, reduceMotion ? 0 : 440);
-    setTimeout(emojiConfetti, reduceMotion ? 0 : 460);
+    setTimeout(dropEmojis, reduceMotion ? 0 : 520);
     setTimeout(startDrizzle, reduceMotion ? 0 : 1300);
     setTimeout(function () { replay.classList.add("show"); }, reduceMotion ? 0 : 1500);
     setTimeout(refreshCue, reduceMotion ? 50 : 1250);
@@ -797,6 +893,9 @@
     card.classList.remove("opened");
     replay.classList.remove("show");
     stopDrizzle();
+    emojiBalls = [];
+    particles = [];
+    ctx.clearRect(0, 0, W, H);
     if (scroller) scroller.scrollTop = 0;
     inside.classList.remove("has-more", "read");
   }
