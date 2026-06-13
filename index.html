@@ -676,21 +676,21 @@
     ];
     function fire(opts) {
       confetti(Object.assign({
-        particleCount: 22,
+        particleCount: 20,
         spread: 360,
-        startVelocity: 30,
-        gravity: 0.85,
+        startVelocity: 26,
+        gravity: 1.1,        /* pull them down so they rain into view */
         decay: 0.92,
-        ticks: 150,
+        ticks: 420,          /* long life so they linger instead of fading fast */
         flat: true,
         shapes: shapes,
         scalar: scalar,
-        origin: { x: 0.5, y: 0.44 }
+        origin: { x: 0.5, y: 0.4 }
       }, opts));
     }
     fire({});
-    setTimeout(function () { fire({ particleCount: 14, startVelocity: 24 }); }, 200);
-    setTimeout(function () { fire({ particleCount: 10, scalar: scalar * 1.35, spread: 260 }); }, 420);
+    setTimeout(function () { fire({ particleCount: 14, startVelocity: 20 }); }, 220);
+    setTimeout(function () { fire({ particleCount: 10, scalar: scalar * 1.35, spread: 260 }); }, 460);
   }
 
   var drizzle = null;
