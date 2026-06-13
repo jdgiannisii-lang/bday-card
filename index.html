@@ -652,8 +652,7 @@
   });
   replay.addEventListener("click", function (e) {
     e.stopPropagation();
-    resetCard();
-    setTimeout(openCard, 720);
+    resetCard(); /* close it back up; a tap on the card opens it again */
   });
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden && isOpen) startLoop();
