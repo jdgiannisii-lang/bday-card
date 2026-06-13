@@ -3,235 +3,262 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Happy Birthday 💕</title>
+<title>Happy Birthday</title>
 
 <!--
   ============================================================================
    DIGITAL BIRTHDAY CARD
   ============================================================================
-   Everything you need to personalize is in the CONFIG block just below in the
-   script at the bottom, PLUS the three clearly marked spots in the HTML.
-   Search the file for these labels (the pencil emoji is part of each one):
+   Three things to personalize. Search the file for these labels (the pencil
+   emoji is part of each one, so the search is unique):
 
      1.  HER NAME ......  search for:  HER NAME
      2.  PHOTO .........  search for:  PHOTO
      3.  THE MESSAGE ...  search for:  MESSAGE GOES HERE
 
-   To share: this is a single self-contained file. Just open it in a browser,
-   or upload it to any static host (GitHub Pages, Netlify, Vercel) and send
-   the link. No build step, no dependencies.
+   To share: this is one self-contained file. Open it in a browser, or upload
+   it to any static host (GitHub Pages, Netlify, Vercel) and send the link.
 
-   NOTE: do not put HTML comment markers inside this block (they would end
-   the comment early and leak text onto the page).
+   NOTE: never put HTML comment markers inside this block. They would end the
+   comment early and leak text onto the page.
   ============================================================================
 -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
 
 <style>
   :root {
-    --pink-1: #ff4d8d;
-    --pink-2: #ff7eb3;
-    --pink-3: #ff9ec6;
-    --magenta: #ff2e93;
-    --coral: #ff6b6b;
-    --gold: #ffd86b;
-    --cream: #fff5fa;
-    --ink: #6b1f44;
+    --paper:      #f8f1e3;   /* warm cream cardstock */
+    --paper-warm: #f3e8d4;   /* slightly deeper cream */
+    --paper-edge: #e7d8bf;   /* shadowed fold / edges */
+    --ink:        #46362d;   /* warm sepia, like real pen ink */
+    --ink-soft:   #7a685b;
+    --rose:       #c25470;   /* single rich accent (HSL sat < 60%) */
+    --rose-deep:  #9e3a55;   /* wax seal / deepest accent */
+    --blush:      #e6b3bf;   /* soft secondary */
+    --coral:      #e58a64;   /* warm confetti pop */
+    --gold-hi:    #f3dca0;
+    --gold-mid:   #cba455;
+    --gold-lo:    #9c7833;
+    --radius: 14px;          /* one corner system everywhere */
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
   html, body { height: 100%; margin: 0; }
 
   body {
-    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
     color: var(--ink);
     overflow: hidden;
     background:
-      radial-gradient(1200px 800px at 20% 15%, #ffe3f1 0%, transparent 55%),
-      radial-gradient(1000px 700px at 85% 80%, #ffd9ec 0%, transparent 55%),
-      linear-gradient(135deg, #ffb3d9 0%, #ff8fc4 38%, #ffa9d4 70%, #ffc6e3 100%);
+      radial-gradient(1100px 760px at 50% 22%, #fbf4e8 0%, #f3e3d3 46%, #ecd8c4 100%);
     background-attachment: fixed;
   }
 
-  /* ---------- Layout ---------- */
+  /* Soft paper grain over the whole scene for a printed, tactile feel */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 40;
+    opacity: .05;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- Stage ---------- */
   .stage {
     position: fixed;
     inset: 0;
     display: grid;
     place-items: center;
-    perspective: 1600px;
-    perspective-origin: 50% 45%;
+    perspective: 1800px;
+    perspective-origin: 50% 42%;
+    z-index: 2;
   }
 
-  /* Soft glowing halo behind the card */
-  .halo {
-    position: absolute;
-    width: min(120vw, 900px);
-    height: min(120vw, 900px);
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,180,214,.25) 35%, transparent 70%);
-    filter: blur(8px);
-    animation: haloPulse 6s ease-in-out infinite;
-    pointer-events: none;
-  }
-  @keyframes haloPulse {
-    0%, 100% { transform: scale(1);   opacity: .8; }
-    50%      { transform: scale(1.08); opacity: 1; }
-  }
-
-  /* ---------- The card ---------- */
+  /* ---------- Card ---------- */
   .card {
     position: relative;
-    width: min(86vw, 360px);
-    height: min(74vh, 480px);
+    width: min(84vw, 350px);
+    height: min(72vh, 470px);
     transform-style: preserve-3d;
     cursor: pointer;
-    transition: transform .9s cubic-bezier(.2,.7,.2,1);
-    transform: rotateX(8deg) rotateZ(-1deg);
-    animation: floatCard 5.5s ease-in-out infinite;
+    transition: transform 1s cubic-bezier(.22,.7,.18,1);
+    transform: rotateX(6deg) rotateZ(-.6deg);
+    animation: settle 1.1s cubic-bezier(.2,.8,.2,1) both, sway 9s ease-in-out 1.1s infinite;
     will-change: transform;
   }
-  @keyframes floatCard {
-    0%, 100% { transform: rotateX(8deg) rotateZ(-1deg) translateY(0); }
-    50%      { transform: rotateX(8deg) rotateZ(-1deg) translateY(-14px); }
+  @keyframes settle {
+    from { opacity: 0; transform: rotateX(16deg) translateY(34px) scale(.94); }
+    to   { opacity: 1; transform: rotateX(6deg) translateY(0) scale(1); }
+  }
+  /* A barely-there idle drift, not a bounce. Motion that breathes. */
+  @keyframes sway {
+    0%, 100% { transform: rotateX(6deg) rotateZ(-.6deg) translateY(0); }
+    50%      { transform: rotateX(6deg) rotateZ(-.6deg) translateY(-7px); }
   }
 
-  /* When opened we stop the float and let the inside take focus */
-  .card.opened { animation: none; cursor: default; transform: rotateX(4deg) translateX(22%) scale(1.02); }
-  @media (max-width: 560px) {
-    .card.opened { transform: rotateX(2deg) translateX(0) translateY(-6%) scale(1); }
+  .card.opened {
+    animation: none;
+    cursor: default;
+    transform: rotateX(3deg) translateX(24%) scale(1.01);
+  }
+  @media (max-width: 580px) {
+    .card.opened { transform: rotateX(2deg) translateX(0) translateY(-5%); }
   }
 
   .face {
     position: absolute;
     inset: 0;
-    border-radius: 20px;
+    border-radius: var(--radius);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     overflow: hidden;
-    box-shadow:
-      0 30px 60px rgba(157, 23, 77, .35),
-      0 10px 22px rgba(157, 23, 77, .25);
+  }
+  /* shared grain on each face */
+  .face::after {
+    content: "";
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: .06; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  /* ----- The inside (revealed) ----- */
+  /* ----- Inside (the note) ----- */
   .inside {
+    background:
+      linear-gradient(90deg, var(--paper-edge) 0%, var(--paper) 7%, var(--paper) 100%),
+      var(--paper);
+    /* soft inner shadow at the spine, like the gutter of a folded card */
+    box-shadow: inset 14px 0 26px -18px rgba(70,54,45,.5),
+                0 26px 50px rgba(112,72,48,.26);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 14px;
-    padding: 30px 26px;
+    gap: 16px;
+    padding: 30px 28px 26px;
     text-align: center;
-    background:
-      radial-gradient(120% 80% at 50% -10%, #ffffff 0%, var(--cream) 45%, #ffe9f3 100%);
-    border: 1px solid rgba(255,255,255,.7);
     overflow-y: auto;
+    visibility: hidden;        /* stays hidden behind the cover until opened */
+    transform: translateZ(-1px);
   }
+  .card.opened .inside { visibility: visible; }
   .inside::-webkit-scrollbar { width: 0; }
 
-  .photo-frame {
+  /* Taped polaroid */
+  .polaroid {
+    position: relative;
     flex: 0 0 auto;
-    width: 116px;
-    height: 116px;
-    border-radius: 50%;
-    padding: 5px;
-    background: linear-gradient(135deg, var(--magenta), var(--gold));
-    box-shadow: 0 8px 20px rgba(255,46,147,.35);
+    background: #fffdf8;
+    padding: 9px 9px 30px;
+    border-radius: 3px;
+    box-shadow: 0 10px 20px rgba(70,54,45,.22), 0 2px 5px rgba(70,54,45,.18);
+    transform: rotate(-3deg);
     opacity: 0;
-    transform: translateY(16px) scale(.9);
   }
-  .photo-frame img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-    display: block;
-    background: #ffe3f1;
-  }
-
-  .inside h1 {
-    font-family: 'Dancing Script', cursive;
-    font-size: clamp(30px, 8vw, 42px);
-    margin: 4px 0 0;
-    line-height: 1.05;
-    color: var(--magenta);
-    text-shadow: 0 2px 0 #fff, 0 6px 16px rgba(255,46,147,.25);
-    opacity: 0;
-    transform: translateY(16px);
-  }
-
-  .inside .msg {
-    font-size: clamp(14px, 3.6vw, 16px);
-    font-weight: 300;
-    line-height: 1.7;
-    color: var(--ink);
-    max-width: 30ch;
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  .inside .msg p { margin: 0 0 .8em; }
-
-  .inside .signoff {
-    font-family: 'Dancing Script', cursive;
-    font-size: clamp(20px, 5vw, 26px);
-    color: var(--pink-1);
-    margin-top: 2px;
-    opacity: 0;
-    transform: translateY(16px);
-  }
-
-  /* staggered reveal once the card is open */
-  .opened .photo-frame { animation: rise .7s .55s ease-out forwards; }
-  .opened .inside h1    { animation: rise .7s .70s ease-out forwards; }
-  .opened .inside .msg  { animation: rise .7s .88s ease-out forwards; }
-  .opened .inside .signoff { animation: rise .7s 1.06s ease-out forwards; }
-  @keyframes rise {
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  /* ----- The cover (front flap that swings open) ----- */
-  .cover {
-    transform-origin: left center;
-    transform: rotateY(0deg);
-    transition: transform 1.05s cubic-bezier(.6,.02,.1,1);
-    z-index: 3;
+  .polaroid .pic {
+    width: 150px;
+    height: 138px;
+    border-radius: 2px;
     background:
-      radial-gradient(140% 120% at 30% 20%, #ff9ec6 0%, var(--pink-1) 45%, var(--magenta) 100%);
-    border: 1px solid rgba(255,255,255,.45);
-  }
-  .card.opened .cover { transform: rotateY(-162deg); box-shadow: -20px 18px 40px rgba(120,10,60,.3); }
-
-  /* The back of the cover (visible when swung open) */
-  .cover-back {
-    transform: rotateY(180deg);
-    background: linear-gradient(135deg, #ffe3f1, #ffd0e6);
+      radial-gradient(120% 120% at 30% 25%, #f4dfe2 0%, #eccdd2 55%, #e3bcc4 100%);
     display: grid;
     place-items: center;
-    color: var(--pink-1);
   }
-  .cover-back .heart-mini { font-size: 60px; opacity: .5; filter: drop-shadow(0 6px 10px rgba(255,46,147,.3)); }
-
-  /* glossy sheen sweeping across the cover */
-  .cover .sheen {
+  .polaroid .pic span {
+    font-family: 'Caveat', cursive;
+    font-size: 19px;
+    color: #b07f86;
+  }
+  .polaroid .cap {
     position: absolute;
-    top: -60%;
-    left: -30%;
-    width: 60%;
-    height: 220%;
-    background: linear-gradient(105deg, transparent, rgba(255,255,255,.45), transparent);
-    transform: rotate(8deg);
-    animation: sheen 4.5s ease-in-out infinite;
-    pointer-events: none;
+    left: 0; right: 0; bottom: 7px;
+    font-family: 'Caveat', cursive;
+    font-size: 17px;
+    color: var(--ink-soft);
   }
-  @keyframes sheen {
-    0%   { left: -40%; }
-    55%  { left: 130%; }
-    100% { left: 130%; }
+  .tape {
+    position: absolute;
+    top: -11px; left: 50%;
+    width: 86px; height: 26px;
+    transform: translateX(-50%) rotate(-3deg);
+    background: linear-gradient(180deg, rgba(216,170,120,.42), rgba(216,170,120,.28));
+    border-left: 1px dashed rgba(255,255,255,.4);
+    border-right: 1px dashed rgba(255,255,255,.4);
+    box-shadow: 0 1px 2px rgba(70,54,45,.12);
+  }
+
+  .greeting {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: clamp(26px, 7vw, 34px);
+    line-height: 1.04;
+    color: var(--rose-deep);
+    margin: 2px 0 0;
+    opacity: 0;
+  }
+
+  /* The note is handwritten, in ink, set ragged-left like a real letter */
+  .note {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(18px, 4.6vw, 21px);
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 30ch;
+    text-align: left;
+    opacity: 0;
+  }
+  .note p { margin: 0 0 .55em; }
+
+  .signoff {
+    align-self: flex-end;
+    font-family: 'Caveat', cursive;
+    font-size: clamp(19px, 5vw, 23px);
+    color: var(--ink);
+    margin-top: 2px;
+    opacity: 0;
+  }
+
+  .opened .polaroid { animation: rise .8s .5s cubic-bezier(.2,.8,.2,1) forwards; }
+  .opened .greeting { animation: rise .8s .66s cubic-bezier(.2,.8,.2,1) forwards; }
+  .opened .note     { animation: rise .8s .84s cubic-bezier(.2,.8,.2,1) forwards; }
+  .opened .signoff  { animation: rise .8s 1.04s cubic-bezier(.2,.8,.2,1) forwards; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px) rotate(var(--r, 0deg)); }
+    to   { opacity: 1; transform: translateY(0) rotate(var(--r, 0deg)); }
+  }
+  .polaroid { --r: -3deg; }
+
+  /* ----- Cover (swings open) ----- */
+  .cover {
+    transform-origin: left center;
+    transform: rotateY(0deg) translateZ(1px);
+    transition: transform 1.15s cubic-bezier(.62,.04,.12,1);
+    z-index: 3;
+    background:
+      linear-gradient(150deg, #fbf3e6 0%, var(--paper) 48%, var(--paper-warm) 100%);
+    box-shadow: 0 26px 50px rgba(112,72,48,.3),
+                inset 0 0 0 1px rgba(255,255,255,.35);
+  }
+  .card.opened .cover {
+    transform: rotateY(-164deg) translateZ(1px);
+    box-shadow: -22px 16px 44px rgba(90,52,34,.34);
+  }
+  /* thin foil border, letterpress frame */
+  .cover .frame {
+    position: absolute;
+    inset: 16px;
+    border-radius: 7px;
+    border: 1.5px solid transparent;
+    background:
+      linear-gradient(var(--paper), var(--paper)) padding-box,
+      linear-gradient(135deg, var(--gold-lo), var(--gold-hi), var(--gold-mid)) border-box;
+    opacity: .85;
   }
 
   .cover-content {
@@ -241,327 +268,301 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 16px;
     text-align: center;
-    padding: 24px;
-    color: #fff;
+    padding: 30px;
+  }
+  .eyebrow {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500;
+    letter-spacing: .42em;
+    text-transform: uppercase;
+    font-size: 10px;
+    color: var(--ink-soft);
+    padding-left: .42em;
+  }
+  .cover-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: clamp(40px, 13vw, 60px);
+    line-height: .92;
+    /* gold-foil gradient text that catches light */
+    background: linear-gradient(100deg, var(--gold-lo) 0%, var(--gold-mid) 22%,
+                #fff4d2 40%, var(--gold-mid) 58%, var(--gold-lo) 82%, var(--gold-mid) 100%);
+    background-size: 240% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: foil 7s ease-in-out infinite;
+    filter: drop-shadow(0 1px 0 rgba(255,255,255,.5));
+  }
+  @keyframes foil {
+    0%, 100% { background-position: 0% 0; }
+    50%      { background-position: 100% 0; }
   }
 
-  .cover-content .for-name {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    font-size: 12px;
+  /* Wax seal, the thing you press. Slightly irregular, embossed heart. */
+  .seal {
+    position: relative;
+    width: 84px; height: 84px;
+    border-radius: 49% 51% 52% 48% / 48% 50% 50% 52%;
+    background:
+      radial-gradient(60% 55% at 38% 32%, #c5546c 0%, var(--rose) 36%, var(--rose-deep) 78%, #7e2c43 100%);
+    box-shadow:
+      0 8px 16px rgba(126,44,67,.5),
+      inset 0 2px 4px rgba(255,255,255,.32),
+      inset 0 -6px 12px rgba(70,18,33,.55);
+    transform: rotate(-7deg);
+    display: grid;
+    place-items: center;
+    animation: breathe 3.4s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: rotate(-7deg) scale(1); }
+    50%      { transform: rotate(-7deg) scale(1.045); }
+  }
+  .seal svg {
+    width: 40px; height: 40px;
+    fill: #84304a;
+    filter: drop-shadow(0 1px 0 rgba(255,255,255,.22)) drop-shadow(0 -1px 1px rgba(60,16,30,.6));
     opacity: .9;
   }
-  .cover-content .name {
-    font-family: 'Dancing Script', cursive;
-    font-weight: 700;
-    font-size: clamp(34px, 11vw, 56px);
-    line-height: 1;
-    margin: 2px 0 6px;
-    text-shadow: 0 3px 0 rgba(157,23,77,.25), 0 10px 24px rgba(120,10,60,.35);
+  .open-label {
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: .34em;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    padding-left: .34em;
+    transition: opacity .4s;
   }
-  .cover-content .title {
-    font-family: 'Dancing Script', cursive;
-    font-size: clamp(20px, 6vw, 30px);
-    opacity: .95;
-    margin-bottom: 4px;
-  }
+  .card.opened .open-label { opacity: 0; }
+  .card:hover:not(.opened) .seal { animation-play-state: paused; transform: rotate(-7deg) scale(1.07); }
 
-  /* The big beating heart on the cover */
-  .heart {
-    position: relative;
-    width: 86px;
-    height: 86px;
-    margin: 10px 0 6px;
-    animation: beat 1.25s ease-in-out infinite;
-    filter: drop-shadow(0 10px 16px rgba(120,10,60,.45));
+  /* back of the cover, glimpsed while it swings */
+  .cover-back {
+    transform: rotateY(180deg) translateZ(1px);
+    background: linear-gradient(150deg, var(--paper-warm), var(--paper-edge));
+    display: grid; place-items: center;
   }
-  .heart::before, .heart::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    width: 44px;
-    height: 70px;
-    border-radius: 44px 44px 0 0;
-    background: linear-gradient(160deg, #fff 0%, #ffd0e6 35%, #ff5fa2 100%);
-  }
-  .heart::before { left: 43px; transform: rotate(-45deg); transform-origin: 0 100%; }
-  .heart::after  { left: 0;    transform: rotate(45deg);  transform-origin: 100% 100%; }
-  @keyframes beat {
-    0%, 100% { transform: scale(1); }
-    14%      { transform: scale(1.18); }
-    28%      { transform: scale(1); }
-    42%      { transform: scale(1.12); }
-    56%      { transform: scale(1); }
-  }
+  .cover-back svg { width: 64px; height: 64px; fill: var(--blush); opacity: .8; }
 
-  .tap-hint {
-    position: absolute;
-    bottom: 18px;
-    left: 0; right: 0;
-    text-align: center;
-    color: #fff;
-    font-size: 12.5px;
-    font-weight: 400;
-    letter-spacing: .04em;
-    opacity: .92;
-    animation: hintBob 1.8s ease-in-out infinite;
-  }
-  .tap-hint span { display: inline-block; }
-  @keyframes hintBob {
-    0%, 100% { transform: translateY(0); opacity: .65; }
-    50%      { transform: translateY(5px); opacity: 1; }
-  }
-  .card.opened .tap-hint { opacity: 0; transition: opacity .3s; }
-
-  /* ---------- Canvas for hearts + glitter ---------- */
+  /* ---------- Confetti canvas ---------- */
   #fx {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
     pointer-events: none;
     z-index: 50;
   }
 
-  /* ---------- Replay button ---------- */
+  /* ---------- Replay (understated) ---------- */
   .replay {
     position: fixed;
-    bottom: 22px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
+    bottom: 26px; left: 50%;
+    transform: translateX(-50%) translateY(14px);
     z-index: 60;
-    border: none;
-    cursor: pointer;
-    padding: 11px 22px;
-    border-radius: 999px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--magenta);
-    background: rgba(255,255,255,.92);
-    box-shadow: 0 8px 22px rgba(157,23,77,.28);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .4s, transform .4s, background .2s;
-    backdrop-filter: blur(4px);
+    border: none; background: none; cursor: pointer;
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    color: var(--rose-deep);
+    opacity: 0; pointer-events: none;
+    transition: opacity .5s, transform .5s;
+    border-bottom: 1.5px solid rgba(158,58,85,.4);
+    padding: 0 2px 1px;
   }
   .replay.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-  .replay:hover { background: #fff; transform: translateX(-50%) translateY(-2px); }
-  .replay:active { transform: translateX(-50%) translateY(0) scale(.97); }
+  .replay:hover { color: var(--rose); border-color: var(--rose); }
 
-  /* Reduced-motion: keep it gentle */
+  /* drifting petals: soft, sparse, like dust in warm light */
+  .petals { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+  .petal {
+    position: absolute;
+    width: 12px; height: 12px;
+    border-radius: 0 76% 0 76%;
+    background: var(--blush);
+    opacity: .35;
+    bottom: -24px;
+    animation: drift linear infinite;
+    will-change: transform;
+  }
+  @keyframes drift {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); }
+    100% { transform: translateY(-118vh) translateX(38px) rotate(220deg); opacity: 0; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .card, .halo, .heart, .sheen, .tap-hint, .floater { animation: none !important; }
+    .card, .seal, .cover-title, .petal { animation: none !important; }
     .card { transition: none; }
-    .cover { transition: transform .5s ease; }
-    .opened .photo-frame, .opened .inside h1, .opened .inside .msg, .opened .inside .signoff {
+    .cover { transition: transform .4s ease; }
+    .petals { display: none; }
+    .opened .polaroid, .opened .greeting, .opened .note, .opened .signoff {
       animation: none; opacity: 1; transform: none;
     }
+    .polaroid { transform: rotate(-3deg); }
+    .signoff { align-self: flex-end; }
   }
 </style>
 </head>
 <body>
 
-  <!-- Ambient drifting hearts live here (added by JS) -->
-  <div class="floaters" id="floaters" aria-hidden="true"></div>
+  <div class="petals" id="petals" aria-hidden="true"></div>
 
   <div class="stage">
-    <div class="halo"></div>
-
     <div class="card" id="card" role="button" tabindex="0" aria-label="Open your birthday card">
 
-      <!-- INSIDE of the card (revealed after opening) -->
+      <!-- INSIDE: the handwritten note -->
       <div class="face inside">
 
-        <!-- ✏️ PHOTO: replace the src below with your photo (a file next to this
-             page like "us.jpg", or any image URL). Square images look best. -->
-        <div class="photo-frame">
-          <img src="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'&gt;&lt;rect width='200' height='200' fill='%23ffe3f1'/&gt;&lt;text x='100' y='112' font-size='64' text-anchor='middle' fill='%23ff5fa2'&gt;📷&lt;/text&gt;&lt;/svg&gt;"
-               alt="Add a photo here" />
+        <!-- ✏️ PHOTO: replace the .pic block with an image when ready, e.g.
+             <img class="pic" src="us.jpg" alt="" />  (square photos sit best) -->
+        <div class="polaroid">
+          <div class="tape"></div>
+          <div class="pic"><span>your photo here</span></div>
+          <div class="cap">us, this year</div>
         </div>
 
-        <!-- ✏️ HER NAME (also shown on the cover below) -->
-        <h1>Happy Birthday,<br />My Love</h1>
+        <!-- ✏️ HER NAME goes in the greeting below -->
+        <h1 class="greeting">Happy birthday,<br />my love</h1>
 
-        <!-- ✏️ MESSAGE GOES HERE -------------------------------------------
-             Replace the paragraphs below with your own birthday message.
-             Keep it in <p>...</p> tags; add or remove paragraphs freely. -->
-        <div class="msg">
-          <p>This is where your message will go. ✨ Write something sweet
-          right here — about how much she means to you, a favorite memory,
-          or all the things you love about her.</p>
-          <p>For now this is just placeholder text so you can see how the
-          finished card will look. Swap it out whenever your words are ready 💝</p>
+        <!-- ✏️ MESSAGE GOES HERE. Replace these two short paragraphs with your
+             own words. Keep them in <p> tags. Plain text reads best here. -->
+        <div class="note">
+          <p>This is where your note will live. Write the way you'd actually
+          say it to her: a moment you keep coming back to, the small things she
+          does, why today matters to you.</p>
+          <p>For now it's placeholder ink so you can see the shape of it. Swap
+          in your real words whenever they're ready.</p>
         </div>
-        <!-- ✏️ END MESSAGE ----------------------------------------------- -->
 
-        <!-- ✏️ Sign it however you like -->
-        <div class="signoff">— With all my love ❤️</div>
+        <!-- ✏️ Sign it. Add your name. -->
+        <div class="signoff">always yours,<br />me</div>
       </div>
 
-      <!-- COVER (the front flap that swings open on click) -->
+      <!-- COVER -->
       <div class="face cover">
-        <div class="sheen"></div>
+        <div class="frame"></div>
         <div class="cover-content">
-          <div class="title">Happy Birthday</div>
-          <div class="heart" aria-hidden="true"></div>
-          <!-- ✏️ HER NAME -->
-          <div class="for-name">to my</div>
-          <div class="name">Beautiful</div>
+          <div class="eyebrow">for you</div>
+          <div class="cover-title">Happy<br />Birthday</div>
+          <div class="seal" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.2C.4 8.7 1.9 5 5.3 5c2 0 3.3 1.2 4.1 2.4l.6.9.6-.9C11.4 6.2 12.7 5 14.7 5 18.1 5 19.6 8.7 22 11.8 19.5 16.1 12 21 12 21z"/></svg>
+          </div>
+          <div class="open-label">press to open</div>
         </div>
-        <div class="tap-hint"><span>👆 tap to open</span></div>
       </div>
 
-      <!-- Back of the cover (seen briefly while it swings) -->
+      <!-- back of cover -->
       <div class="face cover cover-back" aria-hidden="true">
-        <div class="heart-mini">💗</div>
+        <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.2C.4 8.7 1.9 5 5.3 5c2 0 3.3 1.2 4.1 2.4l.6.9.6-.9C11.4 6.2 12.7 5 14.7 5 18.1 5 19.6 8.7 22 11.8 19.5 16.1 12 21 12 21z"/></svg>
       </div>
 
     </div>
   </div>
 
   <canvas id="fx" aria-hidden="true"></canvas>
-
-  <button class="replay" id="replay" type="button">↺ Replay</button>
+  <button class="replay" id="replay" type="button">read it again</button>
 
 <script>
 (function () {
   "use strict";
 
-  /* ======================================================================
-     ⚙️  CONFIG — quick knobs (optional). The text/photo live in the HTML
-         above; these just tune the celebration.
-     ====================================================================== */
-  var CONFIG = {
-    burstHearts: 70,    // hearts in the opening explosion
-    burstGlitter: 160,  // glitter/confetti specks in the explosion
-    ambientHearts: 14   // soft hearts drifting in the background
-  };
+  /* CONFIG: counts for the celebration when the card opens. */
+  var CONFIG = { hearts: 34, petals: 22, confetti: 78, foil: 26, ambientPetals: 9 };
 
   var reduceMotion = window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  var card    = document.getElementById("card");
-  var replay  = document.getElementById("replay");
-  var canvas  = document.getElementById("fx");
-  var ctx     = canvas.getContext("2d");
-  var floaters = document.getElementById("floaters");
+  var card   = document.getElementById("card");
+  var replay = document.getElementById("replay");
+  var canvas = document.getElementById("fx");
+  var ctx    = canvas.getContext("2d");
+  var petalLayer = document.getElementById("petals");
 
-  /* ---------- Canvas sizing (crisp on retina / phones) ---------- */
+  /* ---------- Canvas sizing (crisp on retina) ---------- */
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
   var W = 0, H = 0;
   function resize() {
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width  = Math.floor(W * dpr);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
     canvas.height = Math.floor(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   resize();
   window.addEventListener("resize", resize);
 
-  /* ---------- Particle system ---------- */
+  /* warm, considered palette (no neon) */
+  var HEART_COLORS   = ["#c25470", "#9e3a55", "#e58a64", "#d97a8e"];
+  var CONFETTI_COLORS = ["#f3e8d4", "#cba455", "#e58a64", "#c25470", "#e6b3bf", "#f3dca0"];
+
   var particles = [];
-  var PINKS = ["#ff4d8d", "#ff2e93", "#ff7eb3", "#ff9ec6", "#ff6b6b", "#ffd86b", "#ffffff"];
-  var GLITTER = ["#ff8fc4", "#ffd86b", "#ffffff", "#ff5fa2", "#ffc6e3", "#ffe08a"];
-
   function rand(a, b) { return a + Math.random() * (b - a); }
-  function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+  function pick(a) { return a[(Math.random() * a.length) | 0]; }
 
-  // Draw a heart path centered at (0,0) with size s
   function heartPath(c, s) {
     c.beginPath();
-    var t;
-    for (t = 0; t <= Math.PI * 2 + 0.1; t += 0.35) {
+    for (var t = 0; t <= Math.PI * 2 + .1; t += .35) {
       var x = 16 * Math.pow(Math.sin(t), 3);
       var y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-      var px = (x / 16) * s;
-      var py = (-y / 16) * s;
+      var px = (x / 16) * s, py = (-y / 16) * s;
       if (t === 0) c.moveTo(px, py); else c.lineTo(px, py);
     }
     c.closePath();
   }
 
-  function spawnBurst() {
+  function burst() {
     if (reduceMotion) return;
-    // Origin: roughly the center of the card / screen
-    var ox = W / 2;
-    var oy = H * 0.46;
-
-    var i;
-    for (i = 0; i < CONFIG.burstHearts; i++) {
-      var ang = rand(0, Math.PI * 2);
-      var spd = rand(3, 13);
-      particles.push({
-        type: "heart",
-        x: ox + rand(-30, 30),
-        y: oy + rand(-30, 30),
-        vx: Math.cos(ang) * spd,
-        vy: Math.sin(ang) * spd - rand(2, 6),
-        g: rand(0.12, 0.26),
-        size: rand(9, 22),
-        rot: rand(0, Math.PI * 2),
-        vr: rand(-0.2, 0.2),
-        color: pick(PINKS),
-        life: 1,
-        decay: rand(0.006, 0.013)
-      });
+    var ox = W / 2, oy = H * 0.44;
+    var i, a, sp;
+    for (i = 0; i < CONFIG.hearts; i++) {
+      a = rand(0, Math.PI * 2); sp = rand(3, 11);
+      particles.push({ kind: "heart", x: ox + rand(-26, 26), y: oy + rand(-26, 26),
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(2, 6), g: rand(.12, .24),
+        size: rand(8, 17), rot: rand(0, 6.28), vr: rand(-.16, .16),
+        color: pick(HEART_COLORS), life: 1, decay: rand(.006, .012) });
     }
-    for (i = 0; i < CONFIG.burstGlitter; i++) {
-      var a2 = rand(0, Math.PI * 2);
-      var s2 = rand(4, 16);
-      particles.push({
-        type: "glitter",
-        x: ox + rand(-20, 20),
-        y: oy + rand(-20, 20),
-        vx: Math.cos(a2) * s2,
-        vy: Math.sin(a2) * s2 - rand(1, 5),
-        g: rand(0.1, 0.22),
-        size: rand(2, 5),
-        rot: rand(0, Math.PI * 2),
-        vr: rand(-0.4, 0.4),
-        color: pick(GLITTER),
-        life: 1,
-        decay: rand(0.008, 0.02),
-        tw: rand(0, Math.PI * 2) // twinkle phase
-      });
+    for (i = 0; i < CONFIG.confetti; i++) {
+      a = rand(0, Math.PI * 2); sp = rand(4, 14);
+      particles.push({ kind: "confetti", x: ox + rand(-22, 22), y: oy + rand(-22, 22),
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(1, 5), g: rand(.12, .22),
+        w: rand(5, 9), h: rand(8, 14), rot: rand(0, 6.28), vr: rand(-.3, .3),
+        flutter: rand(0, 6.28), color: pick(CONFETTI_COLORS), life: 1, decay: rand(.006, .013) });
+    }
+    for (i = 0; i < CONFIG.petals; i++) {
+      a = rand(0, Math.PI * 2); sp = rand(2, 8);
+      particles.push({ kind: "petal", x: ox + rand(-20, 20), y: oy + rand(-20, 20),
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(1, 4), g: rand(.05, .12),
+        size: rand(7, 12), rot: rand(0, 6.28), vr: rand(-.1, .1),
+        sway: rand(0, 6.28), color: "#e6b3bf", life: 1, decay: rand(.004, .009) });
+    }
+    for (i = 0; i < CONFIG.foil; i++) {
+      a = rand(0, Math.PI * 2); sp = rand(4, 15);
+      particles.push({ kind: "foil", x: ox + rand(-16, 16), y: oy + rand(-16, 16),
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(1, 5), g: rand(.1, .2),
+        size: rand(2, 4), rot: 0, vr: 0, tw: rand(0, 6.28),
+        color: pick(["#f3dca0", "#cba455", "#fff4d2"]), life: 1, decay: rand(.01, .02) });
     }
     startLoop();
   }
 
-  // A gentle continuous drizzle of hearts after opening (kept light)
-  var drizzleTimer = null;
+  var drizzle = null;
   function startDrizzle() {
     if (reduceMotion) return;
     stopDrizzle();
-    drizzleTimer = setInterval(function () {
+    drizzle = setInterval(function () {
       if (document.hidden) return;
-      particles.push({
-        type: "heart",
-        x: rand(0, W),
-        y: -20,
-        vx: rand(-0.6, 0.6),
-        vy: rand(1, 2.4),
-        g: 0.01,
-        size: rand(8, 16),
-        rot: rand(0, Math.PI * 2),
-        vr: rand(-0.05, 0.05),
-        color: pick(PINKS),
-        life: 1,
-        decay: 0.004,
-        sway: rand(0, Math.PI * 2)
-      });
+      particles.push({ kind: "petal", x: rand(0, W), y: -16, vx: rand(-.5, .5),
+        vy: rand(.8, 1.8), g: .006, size: rand(7, 11), rot: rand(0, 6.28),
+        vr: rand(-.04, .04), sway: rand(0, 6.28), color: pick(["#e6b3bf", "#f3dca0"]),
+        life: 1, decay: .0035 });
       startLoop();
-    }, 320);
+    }, 420);
   }
-  function stopDrizzle() { if (drizzleTimer) { clearInterval(drizzleTimer); drizzleTimer = null; } }
+  function stopDrizzle() { if (drizzle) { clearInterval(drizzle); drizzle = null; } }
 
-  var rafId = null;
-  function startLoop() { if (!rafId) rafId = requestAnimationFrame(tick); }
+  var raf = null;
+  function startLoop() { if (!raf) raf = requestAnimationFrame(tick); }
 
   function tick() {
     ctx.clearRect(0, 0, W, H);
@@ -569,146 +570,98 @@
     for (var i = 0; i < particles.length; i++) {
       var p = particles[i];
       if (p.life <= 0) continue;
-
       p.vy += p.g;
-      if (p.sway !== undefined) { p.sway += 0.04; p.x += Math.sin(p.sway) * 0.6; }
-      p.x += p.vx;
-      p.y += p.vy;
-      p.rot += p.vr;
+      if (p.sway !== undefined) { p.sway += .05; p.x += Math.sin(p.sway) * .7; }
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vx *= .995;
       p.life -= p.decay;
-      p.vx *= 0.995;
-
       if (p.y > H + 40 || p.life <= 0) { p.life = 0; continue; }
       alive++;
 
       ctx.save();
       ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
       ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
 
-      if (p.type === "heart") {
+      if (p.kind === "heart") {
+        ctx.rotate(p.rot);
         ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 6;
         heartPath(ctx, p.size);
         ctx.fill();
-      } else {
-        // glitter: twinkling little diamond/spark
-        p.tw += 0.3;
-        var tw = 0.5 + 0.5 * Math.sin(p.tw);
-        ctx.globalAlpha *= (0.35 + 0.65 * tw);
+      } else if (p.kind === "confetti") {
+        p.flutter += .2;
+        ctx.rotate(p.rot);
+        ctx.scale(Math.cos(p.flutter), 1); /* flutter, like real paper */
         ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 8;
-        var s = p.size * (0.7 + 0.6 * tw);
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      } else if (p.kind === "petal") {
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.moveTo(0, -s); ctx.lineTo(s * 0.6, 0);
-        ctx.lineTo(0, s);  ctx.lineTo(-s * 0.6, 0);
-        ctx.closePath();
+        ctx.ellipse(0, 0, p.size * .6, p.size, 0, 0, Math.PI * 2);
         ctx.fill();
+      } else { /* foil */
+        p.tw += .35;
+        ctx.globalAlpha *= (.4 + .6 * (.5 + .5 * Math.sin(p.tw)));
+        ctx.fillStyle = p.color;
+        var s = p.size;
+        ctx.beginPath();
+        ctx.moveTo(0, -s); ctx.lineTo(s * .55, 0); ctx.lineTo(0, s); ctx.lineTo(-s * .55, 0);
+        ctx.closePath(); ctx.fill();
       }
       ctx.restore();
     }
-
-    // compact occasionally so the array doesn't grow forever
-    if (particles.length > 600) {
-      particles = particles.filter(function (q) { return q.life > 0; });
-    }
-
-    if (alive > 0) {
-      rafId = requestAnimationFrame(tick);
-    } else {
-      ctx.clearRect(0, 0, W, H);
-      rafId = null;
-    }
+    if (particles.length > 700) particles = particles.filter(function (q) { return q.life > 0; });
+    if (alive > 0) raf = requestAnimationFrame(tick);
+    else { ctx.clearRect(0, 0, W, H); raf = null; }
   }
 
-  /* ---------- Ambient background hearts (DOM, pre-open ambience) ---------- */
-  function buildFloaters() {
+  /* ---------- Ambient petals (DOM) ---------- */
+  function buildPetals() {
     if (reduceMotion) return;
-    var emojis = ["💗", "💖", "💕", "🌸", "✨", "💘"];
+    var tints = ["#e6b3bf", "#f3dca0", "#e58a64"];
     var html = "";
-    for (var i = 0; i < CONFIG.ambientHearts; i++) {
-      var left = Math.random() * 100;
-      var dur = 9 + Math.random() * 10;
-      var delay = -Math.random() * dur;
-      var size = 14 + Math.random() * 22;
-      var op = 0.25 + Math.random() * 0.4;
-      html += '<span class="floater" style="left:' + left + 'vw;' +
-              'font-size:' + size + 'px;opacity:' + op + ';' +
-              'animation-duration:' + dur + 's;animation-delay:' + delay + 's;">' +
-              emojis[(Math.random() * emojis.length) | 0] + '</span>';
+    for (var i = 0; i < CONFIG.ambientPetals; i++) {
+      var left = Math.random() * 100, dur = 14 + Math.random() * 12,
+          delay = -Math.random() * dur, size = 9 + Math.random() * 9,
+          op = .2 + Math.random() * .25;
+      html += '<span class="petal" style="left:' + left + 'vw;width:' + size +
+              'px;height:' + size + 'px;opacity:' + op + ';background:' + tints[(Math.random()*tints.length)|0] +
+              ';animation-duration:' + dur + 's;animation-delay:' + delay + 's;"></span>';
     }
-    floaters.innerHTML = html;
+    petalLayer.innerHTML = html;
   }
 
-  /* ---------- Open / replay flow ---------- */
+  /* ---------- Open / replay ---------- */
   var isOpen = false;
-
   function openCard() {
     if (isOpen) return;
     isOpen = true;
     card.classList.add("opened");
-    // sync the burst with the flap swinging open
-    setTimeout(spawnBurst, reduceMotion ? 0 : 360);
-    setTimeout(startDrizzle, reduceMotion ? 0 : 1200);
-    setTimeout(function () { replay.classList.add("show"); }, reduceMotion ? 0 : 1400);
+    setTimeout(burst, reduceMotion ? 0 : 440);
+    setTimeout(startDrizzle, reduceMotion ? 0 : 1300);
+    setTimeout(function () { replay.classList.add("show"); }, reduceMotion ? 0 : 1500);
   }
-
   function resetCard() {
     isOpen = false;
     card.classList.remove("opened");
     replay.classList.remove("show");
     stopDrizzle();
-    // let the flap close, then you can open again
   }
-
   card.addEventListener("click", openCard);
   card.addEventListener("keydown", function (e) {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(); }
   });
-
   replay.addEventListener("click", function (e) {
     e.stopPropagation();
     resetCard();
-    setTimeout(openCard, 700);
+    setTimeout(openCard, 720);
   });
-
-  // pause/resume cleanly when tab hidden
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden && isOpen) startLoop();
   });
 
-  /* ---------- Init ---------- */
-  buildFloaters();
+  buildPetals();
 })();
 </script>
-
-<style>
-  /* Ambient floaters layer (kept here so the JS-built spans have a home) */
-  .floaters {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-    z-index: 1;
-  }
-  .floater {
-    position: absolute;
-    bottom: -40px;
-    will-change: transform, opacity;
-    animation-name: floatUp;
-    animation-timing-function: ease-in;
-    animation-iteration-count: infinite;
-    filter: drop-shadow(0 4px 6px rgba(255,46,147,.2));
-  }
-  @keyframes floatUp {
-    0%   { transform: translateY(0) translateX(0) rotate(0deg); }
-    50%  { transform: translateY(-55vh) translateX(20px) rotate(20deg); }
-    100% { transform: translateY(-110vh) translateX(-10px) rotate(-15deg); opacity: 0; }
-  }
-  @media (prefers-reduced-motion: reduce) { .floaters { display: none; } }
-</style>
 
 </body>
 </html>
