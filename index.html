@@ -144,17 +144,65 @@
                 0 26px 50px rgba(112,72,48,.26);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 16px;
-    padding: 30px 28px 26px;
-    text-align: center;
-    overflow-y: auto;
+    overflow: hidden;
     visibility: hidden;        /* stays hidden behind the cover until opened */
     transform: translateZ(-1px);
   }
   .card.opened .inside { visibility: visible; }
-  .inside::-webkit-scrollbar { width: 0; }
+
+  .inside-scroll {
+    flex: 1 1 auto;
+    width: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 30px 28px 28px;
+    text-align: center;
+    -webkit-overflow-scrolling: touch;
+  }
+  .inside-scroll::-webkit-scrollbar { width: 0; }
+
+  /* scroll affordance: a fade + handwritten cue, shown only when the note
+     overflows, faded out once she reaches the end */
+  .scroll-fade {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 58px;
+    background: linear-gradient(to top, var(--paper) 14%, rgba(248,241,227,0));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .45s;
+    z-index: 2;
+  }
+  .scroll-cue {
+    position: absolute;
+    left: 0; right: 0; bottom: 7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    font-family: 'Caveat', cursive;
+    font-size: 15px;
+    color: var(--ink-soft);
+    opacity: 0;
+    transition: opacity .45s;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .scroll-cue svg {
+    width: 17px; height: 17px;
+    fill: none; stroke: var(--ink-soft); stroke-width: 2.4;
+    stroke-linecap: round; stroke-linejoin: round;
+    animation: nudge 1.6s ease-in-out infinite;
+  }
+  @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+  .inside.has-more .scroll-fade,
+  .inside.has-more .scroll-cue { opacity: 1; }
+  .inside.has-more.read .scroll-fade,
+  .inside.has-more.read .scroll-cue { opacity: 0; }
 
   /* Taped polaroid */
   .polaroid {
@@ -260,6 +308,36 @@
       linear-gradient(var(--paper), var(--paper)) padding-box,
       linear-gradient(135deg, var(--gold-lo), var(--gold-hi), var(--gold-mid)) border-box;
     opacity: .85;
+  }
+
+  /* tasteful foil "18" medallion, top-right corner of the cover */
+  .milestone {
+    position: absolute;
+    top: 25px; right: 25px;
+    width: 42px; height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    background:
+      linear-gradient(var(--paper), var(--paper)) padding-box,
+      linear-gradient(135deg, var(--gold-lo), var(--gold-hi), var(--gold-mid)) border-box;
+    box-shadow: 0 2px 6px rgba(112,72,48,.18);
+    z-index: 4;
+  }
+  .milestone span {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 21px;
+    line-height: 1;
+    background: linear-gradient(100deg, var(--gold-lo) 0%, var(--gold-mid) 30%,
+                #edcd80 50%, var(--gold-mid) 70%, var(--gold-lo) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    padding-left: 1px;
   }
 
   .cover-content {
@@ -402,7 +480,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .card, .seal, .cover-title, .petal { animation: none !important; }
+    .card, .seal, .cover-title, .petal, .scroll-cue svg { animation: none !important; }
     .card { transition: none; }
     .cover { transition: transform .4s ease; }
     .petals { display: none; }
@@ -423,6 +501,7 @@
 
       <!-- INSIDE: the handwritten note -->
       <div class="face inside">
+       <div class="inside-scroll" id="insideScroll">
 
         <!-- ✏️ PHOTO: swap the src to change the picture. -->
         <div class="polaroid">
@@ -450,11 +529,19 @@
 
         <!-- ✏️ Sign it. Add your name. -->
         <div class="signoff">With immeasurable love,<br />JD</div>
+       </div>
+
+       <div class="scroll-fade" aria-hidden="true"></div>
+       <div class="scroll-cue" aria-hidden="true">
+         <span>keep reading</span>
+         <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+       </div>
       </div>
 
       <!-- COVER -->
       <div class="face cover">
         <div class="frame"></div>
+        <div class="milestone" aria-hidden="true"><span>18</span></div>
         <div class="cover-content">
           <div class="eyebrow">for you</div>
           <div class="cover-title">Happy<br />Birthday</div>
@@ -494,6 +581,23 @@
   var canvas = document.getElementById("fx");
   var ctx    = canvas.getContext("2d");
   var petalLayer = document.getElementById("petals");
+  var inside   = document.querySelector(".face.inside");
+  var scroller = document.getElementById("insideScroll");
+
+  /* Scroll affordance: show the cue only when the note overflows, hide it
+     once she has scrolled to the end. */
+  function atBottom() {
+    if (!scroller) return;
+    var done = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8;
+    inside.classList.toggle("read", done);
+  }
+  function refreshCue() {
+    if (!scroller) return;
+    inside.classList.toggle("has-more", scroller.scrollHeight - scroller.clientHeight > 6);
+    atBottom();
+  }
+  if (scroller) scroller.addEventListener("scroll", atBottom, { passive: true });
+  window.addEventListener("resize", function () { if (isOpen) refreshCue(); });
 
   /* ---------- Canvas sizing (crisp on retina) ---------- */
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -679,16 +783,21 @@
     if (isOpen) return;
     isOpen = true;
     card.classList.add("opened");
+    if (scroller) scroller.scrollTop = 0;
+    inside.classList.remove("read");
     setTimeout(burst, reduceMotion ? 0 : 440);
     setTimeout(emojiConfetti, reduceMotion ? 0 : 460);
     setTimeout(startDrizzle, reduceMotion ? 0 : 1300);
     setTimeout(function () { replay.classList.add("show"); }, reduceMotion ? 0 : 1500);
+    setTimeout(refreshCue, reduceMotion ? 50 : 1250);
   }
   function resetCard() {
     isOpen = false;
     card.classList.remove("opened");
     replay.classList.remove("show");
     stopDrizzle();
+    if (scroller) scroller.scrollTop = 0;
+    inside.classList.remove("has-more", "read");
   }
   card.addEventListener("click", openCard);
   card.addEventListener("keydown", function (e) {
