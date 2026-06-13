@@ -686,7 +686,7 @@
     /* keep the whole pile below the bottom of the card */
     /* lots of emojis; the loose pile climbs up close to the bottom of the
        card (a little overlap is fine on phones) */
-    var count = 40;
+    var count = 37;
 
     for (var i = 0; i < count; i++) {
       (function (idx) {
@@ -724,23 +724,26 @@
     }
 
     /* a few relaxation passes for stable stacking */
-    for (var pass = 0; pass < 4; pass++) {
+    for (var pass = 0; pass < 6; pass++) {
       for (var a = 0; a < n; a++) {
         var b1 = emojiBalls[a];
         for (var c = a + 1; c < n; c++) {
           var b2 = emojiBalls[c];
+          if (b1.asleep && b2.asleep) continue;   /* settled pairs stay put */
           var dx = b2.x - b1.x, dy = b2.y - b1.y;
           var minD = b1.cR + b2.cR, d2 = dx * dx + dy * dy;
           if (d2 < minD * minD && d2 > 0.0001) {
             var d = Math.sqrt(d2), nx = dx / d, ny = dy / d;
-            var corr = (minD - d) * 0.5;
-            b1.x -= nx * corr; b1.y -= ny * corr;
-            b2.x += nx * corr; b2.y += ny * corr;
+            var overlap = minD - d;
+            /* asleep balls are immovable (infinite mass) */
+            var w1 = b1.asleep ? 0 : 1, w2 = b2.asleep ? 0 : 1, sum = w1 + w2;
+            b1.x -= nx * overlap * (w1 / sum); b1.y -= ny * overlap * (w1 / sum);
+            b2.x += nx * overlap * (w2 / sum); b2.y += ny * overlap * (w2 / sum);
             var vn = (b2.vx - b1.vx) * nx + (b2.vy - b1.vy) * ny;
             if (vn < 0) {
               var imp = vn * 0.5;
-              b1.vx += nx * imp; b1.vy += ny * imp;
-              b2.vx -= nx * imp; b2.vy -= ny * imp;
+              if (!b1.asleep) { b1.vx += nx * imp; b1.vy += ny * imp; }
+              if (!b2.asleep) { b2.vx -= nx * imp; b2.vy -= ny * imp; }
               if (vn < -0.6) { b1.asleep = b2.asleep = false; b1.still = b2.still = 0; }
             }
           }
@@ -748,6 +751,7 @@
       }
       for (i = 0; i < n; i++) {
         b = emojiBalls[i];
+        if (b.asleep) continue;
         if (b.x < b.cR) b.x = b.cR; else if (b.x > W - b.cR) b.x = W - b.cR;
         var fl2 = floorFor(b); if (b.y > fl2) b.y = fl2;
       }
