@@ -464,6 +464,8 @@
   <canvas id="fx" aria-hidden="true"></canvas>
   <button class="replay" id="replay" type="button">read it again</button>
 
+<!-- emoji confetti, via catdad/canvas-confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script>
 (function () {
   "use strict";
@@ -544,6 +546,34 @@
         color: pick(["#f3dca0", "#cba455", "#fff4d2"]), life: 1, decay: rand(.01, .02) });
     }
     startLoop();
+  }
+
+  /* Emoji confetti (🥰 / 🫰) via canvas-confetti. Skipped if reduced motion
+     or if the library failed to load. */
+  function emojiConfetti() {
+    if (reduceMotion || typeof confetti !== "function") return;
+    var scalar = 2;
+    var shapes = [
+      confetti.shapeFromText({ text: "🥰", scalar: scalar }), /* 🥰 */
+      confetti.shapeFromText({ text: "🫰", scalar: scalar })  /* 🫰 */
+    ];
+    function fire(opts) {
+      confetti(Object.assign({
+        particleCount: 22,
+        spread: 360,
+        startVelocity: 30,
+        gravity: 0.85,
+        decay: 0.92,
+        ticks: 150,
+        flat: true,
+        shapes: shapes,
+        scalar: scalar,
+        origin: { x: 0.5, y: 0.44 }
+      }, opts));
+    }
+    fire({});
+    setTimeout(function () { fire({ particleCount: 14, startVelocity: 24 }); }, 200);
+    setTimeout(function () { fire({ particleCount: 10, scalar: scalar * 1.35, spread: 260 }); }, 420);
   }
 
   var drizzle = null;
@@ -637,6 +667,7 @@
     isOpen = true;
     card.classList.add("opened");
     setTimeout(burst, reduceMotion ? 0 : 440);
+    setTimeout(emojiConfetti, reduceMotion ? 0 : 460);
     setTimeout(startDrizzle, reduceMotion ? 0 : 1300);
     setTimeout(function () { replay.classList.add("show"); }, reduceMotion ? 0 : 1500);
   }
