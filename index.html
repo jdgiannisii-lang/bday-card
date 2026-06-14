@@ -674,7 +674,9 @@
               <circle class="knot" cx="26" cy="18" r="4.5"/>
             </svg>
           </div>
-          <video class="gift-clip" muted playsinline preload="auto" aria-hidden="true"></video>
+          <!-- ✏️ Opening clip made with Higgsfield (Seedance 1.5). Swap this
+               file or the src to change it; the CSS/SVG pop is the fallback. -->
+          <video class="gift-clip" muted playsinline preload="auto" aria-hidden="true" src="assets/gift.mp4"></video>
           <div class="gift-hint">tap to open</div>
           <div class="gift-reveal">
             <a class="gift-link" target="_blank" rel="noopener">open your gift &#127873;</a>
@@ -740,7 +742,7 @@
   var gift      = document.getElementById("gift");
   var giftLink  = gift ? gift.querySelector(".gift-link") : null;
   var giftClip  = gift ? gift.querySelector(".gift-clip") : null;
-  var giftTaps  = 0, giftOpen = false, clipReady = false;
+  var giftTaps  = 0, giftOpen = false, clipFailed = false;
 
   /* Scroll affordance: show the cue only when the note overflows, hide it
      once she has scrolled to the end. */
@@ -1074,12 +1076,17 @@
     giftOpen = true;
     gift.classList.remove("tap-1", "tap-2");
     gift.classList.add("opened");
-    if (!reduceMotion && clipReady && giftClip) {
+    function clipFallback() {
+      clipFailed = true; gift.classList.remove("has-clip");
+      if (!reduceMotion) burst();
+    }
+    var useClip = !reduceMotion && giftClip && giftClip.getAttribute("src") && !clipFailed;
+    if (useClip) {
       try {
         giftClip.currentTime = 0;
         var pr = giftClip.play();
-        if (pr && pr.catch) pr.catch(function () {});
-      } catch (e) {}
+        if (pr && pr.catch) pr.catch(clipFallback);
+      } catch (e) { clipFallback(); }
     } else if (!reduceMotion) {
       burst();                                     /* CSS-path sparkle */
     }
@@ -1094,15 +1101,14 @@
   function initGift() {
     if (!gift) return;
     if (giftLink) giftLink.setAttribute("href", GIFT_URL);
-    /* use the Higgsfield clip only once the browser says it can play it */
+    /* a Higgsfield opening clip is wired into .gift-clip; show it in place of
+       the box once opened, and fall back to the CSS pop only if it fails */
     if (giftClip && giftClip.getAttribute("src")) {
-      giftClip.addEventListener("canplay", function () {
-        clipReady = true; gift.classList.add("has-clip");
-      });
+      gift.classList.add("has-clip");
       giftClip.addEventListener("error", function () {
-        clipReady = false; gift.classList.remove("has-clip");
+        clipFailed = true; gift.classList.remove("has-clip");
+        if (giftOpen && !reduceMotion) burst();
       });
-      try { giftClip.load(); } catch (e) {}
     }
     gift.addEventListener("click", function (e) {
       if (e.target.closest(".gift-link")) return;  /* let the link open */
