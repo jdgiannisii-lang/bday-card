@@ -1073,6 +1073,8 @@
     gift.classList.remove("tap-1", "tap-2");
     void gift.offsetWidth;                        /* restart the wobble */
     gift.classList.add(giftTaps % 2 ? "tap-1" : "tap-2");
+    var hint = gift.querySelector(".gift-hint");
+    if (hint) hint.textContent = "again!";        /* clear feedback the tap landed */
   }
   function openGift() {
     if (giftOpen) return;
@@ -1100,6 +1102,8 @@
     if (!gift) return;
     giftOpen = false; giftTaps = 0;
     gift.classList.remove("opened", "revealed", "tap-1", "tap-2", "playing-clip");
+    var hint = gift.querySelector(".gift-hint");
+    if (hint) hint.textContent = "tap to open";
     if (giftClip) { try { giftClip.pause(); giftClip.currentTime = 0; } catch (e) {} }
   }
   function initGift() {
@@ -1114,13 +1118,30 @@
         if (giftOpen && !reduceMotion) burst();
       });
     }
-    gift.addEventListener("click", function (e) {
-      if (e.target.closest(".gift-link")) return;  /* let the link open */
-      e.stopPropagation();                          /* never re-trigger the card */
-      tapGift();
-    });
+    function isLink(e) { return e.target && e.target.closest && e.target.closest(".gift-link"); }
+    /* Pointer Events are the most reliable tap signal on iOS (more so than a
+       synthesized click on a div). Guard against scroll/drag by distance. */
+    if (window.PointerEvent) {
+      var down = null;
+      gift.addEventListener("pointerdown", function (e) { down = { x: e.clientX, y: e.clientY }; });
+      gift.addEventListener("pointerup", function (e) {
+        if (isLink(e)) return;                        /* let the reveal link work */
+        if (down) {
+          var dx = e.clientX - down.x, dy = e.clientY - down.y; down = null;
+          if (dx * dx + dy * dy > 144) return;        /* moved: a scroll, not a tap */
+        }
+        e.stopPropagation();                           /* never re-trigger the card */
+        tapGift();
+      });
+    } else {
+      gift.addEventListener("click", function (e) {
+        if (isLink(e)) return;
+        e.stopPropagation();
+        tapGift();
+      });
+    }
     gift.addEventListener("keydown", function (e) {
-      if (e.target.closest(".gift-link")) return;
+      if (isLink(e)) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault(); e.stopPropagation(); tapGift();
       }
