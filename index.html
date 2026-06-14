@@ -87,6 +87,7 @@
     height: min(72vh, 470px);
     transform-style: preserve-3d;
     cursor: pointer;
+    touch-action: manipulation;
     transition: transform 1s cubic-bezier(.22,.7,.18,1);
     transform: rotateX(6deg) rotateZ(-.6deg);
     animation: settle 1.1s cubic-bezier(.2,.8,.2,1) both, eager 5s ease-in-out 1.1s infinite;
@@ -294,6 +295,7 @@
     position: relative;
     margin-top: 4px;
     cursor: pointer;
+    touch-action: manipulation;   /* taps register cleanly on iOS (no zoom) */
     opacity: 0;
     outline: none;
   }
@@ -350,8 +352,9 @@
     border-radius: 10px;
     background: var(--paper);
   }
-  .gift.has-clip.opened .gift-box { display: none; }
-  .gift.has-clip.opened .gift-clip { display: block; }
+  /* swap the box for the clip only while the clip is actually playing */
+  .gift.playing-clip .gift-box { display: none; }
+  .gift.playing-clip .gift-clip { display: block; }
 
   .gift-hint {
     font-family: 'Caveat', cursive;
@@ -395,9 +398,9 @@
     66% { transform: rotate(-5deg) translateY(-1px); }
     86% { transform: rotate(3deg); }
   }
-  .gift.opened:not(.has-clip) .gift-lid { animation: lidPop .55s cubic-bezier(.2,.7,.2,1) forwards; }
-  .gift.opened:not(.has-clip) .gift-bow { animation: bowPop .55s cubic-bezier(.2,.7,.2,1) forwards; }
-  .gift.opened:not(.has-clip) .gift-box { animation: boxPop .5s ease; }
+  .gift.opened:not(.playing-clip) .gift-lid { animation: lidPop .55s cubic-bezier(.2,.7,.2,1) forwards; }
+  .gift.opened:not(.playing-clip) .gift-bow { animation: bowPop .55s cubic-bezier(.2,.7,.2,1) forwards; }
+  .gift.opened:not(.playing-clip) .gift-box { animation: boxPop .5s ease; }
   @keyframes lidPop {
     0%   { transform: translateX(-50%) translateY(0) rotate(0); opacity: 1; }
     100% { transform: translateX(-50%) translateY(-40px) rotate(-22deg); opacity: 0; }
@@ -738,7 +741,7 @@
   /* Tap-to-open gift. ✏️ GIFT_URL: paste Rachel's Google Drive share link here
      (set the file to "anyone with the link"); the reveal still works as "#". */
   var GIFT_URL  = "#";
-  var GIFT_TAPS = 3;                 /* taps needed to pop the present open */
+  var GIFT_TAPS = 2;                 /* a couple of taps: one wobble, then open */
   var gift      = document.getElementById("gift");
   var giftLink  = gift ? gift.querySelector(".gift-link") : null;
   var giftClip  = gift ? gift.querySelector(".gift-clip") : null;
@@ -1077,11 +1080,12 @@
     gift.classList.remove("tap-1", "tap-2");
     gift.classList.add("opened");
     function clipFallback() {
-      clipFailed = true; gift.classList.remove("has-clip");
+      clipFailed = true; gift.classList.remove("has-clip", "playing-clip");
       if (!reduceMotion) burst();
     }
     var useClip = !reduceMotion && giftClip && giftClip.getAttribute("src") && !clipFailed;
     if (useClip) {
+      gift.classList.add("playing-clip");          /* swap the box for the clip */
       try {
         giftClip.currentTime = 0;
         var pr = giftClip.play();
@@ -1095,7 +1099,7 @@
   function resetGift() {
     if (!gift) return;
     giftOpen = false; giftTaps = 0;
-    gift.classList.remove("opened", "revealed", "tap-1", "tap-2");
+    gift.classList.remove("opened", "revealed", "tap-1", "tap-2", "playing-clip");
     if (giftClip) { try { giftClip.pause(); giftClip.currentTime = 0; } catch (e) {} }
   }
   function initGift() {
@@ -1106,7 +1110,7 @@
     if (giftClip && giftClip.getAttribute("src")) {
       gift.classList.add("has-clip");
       giftClip.addEventListener("error", function () {
-        clipFailed = true; gift.classList.remove("has-clip");
+        clipFailed = true; gift.classList.remove("has-clip", "playing-clip");
         if (giftOpen && !reduceMotion) burst();
       });
     }
