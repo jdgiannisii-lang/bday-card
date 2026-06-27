@@ -67,10 +67,10 @@ Organize the report around these themes. Each bullet is a real question, not a
 keyword.
 
 ### A. The competitive landscape (who is in the space)
-- **Identify "Rachel's virtual card" first.** The founder references a specific
-  "Rachel's virtual card" as the comparison. Find out what it actually is: a
-  viral template, a creator's product, a TikTok/Etsy trend, or a named app.
-  Pin down what it does and why it spread.
+- Note: **"Rachel's virtual card" is the seed artifact in this repo** — the card
+  the founder hand-built for his girlfriend Rachel. It is the inspiration and the
+  proof-of-craft, not an external competitor. There is nothing to "identify";
+  treat it as the reference design the product would productize.
 - Map the players across these adjacent categories, with what each does, pricing,
   platform, and who they target:
   - **Modern digital/animated card apps:** Givingli, Cardsnacks, JibJab,
@@ -155,8 +155,7 @@ A cited report with:
    and if so, which audience/occasion to start with?
 2. **Competitor matrix** (name, what it does, platform, pricing, target user,
    why it wins, what it misses).
-3. **"Rachel's virtual card" identified** and explained.
-4. **Market sizing + demand evidence** for the beachhead segments, with numbers
+3. **Market sizing + demand evidence** for the beachhead segments, with numbers
    and sources.
 5. **Willingness-to-pay / pricing** analysis with comparables.
 6. **A recommended wedge + GTM motion** (who to launch to, the viral loop, the
@@ -193,9 +192,7 @@ Reddit/TikTok sentiment). Flag where data is thin and mark estimates as estimate
 >
 > Research the space thoroughly and give me a cited report. Specifically:
 >
-> 1. **Identify "Rachel's virtual card"** (a specific viral card/app I'm comparing to)
->    and explain what it is and why it spread.
-> 2. **Map the competitive landscape** — modern animated-card apps (Givingli,
+> 1. **Map the competitive landscape** — modern animated-card apps (Givingli,
 >    Cardsnacks, JibJab, Paperless Post, Punchbowl, Open Me, Smilebox), legacy ecards
 >    (American Greetings/Blue Mountain, Hallmark), physical-card-from-phone (Touchnote,
 >    Felt, Punkpost, Moonpig, Thortful), group cards (Kudoboard, GroupGreeting,
@@ -203,23 +200,23 @@ Reddit/TikTok sentiment). Flag where data is thin and mark estimates as estimate
 >    (Lovebox, Bond Touch, Paired, Between). For each: what it does, platform, pricing,
 >    target user, **why it wins, and what it's missing** (mine app-store reviews,
 >    Reddit, TikTok, Trustpilot for complaints).
-> 3. **Is the demand real and durable?** Size the greeting-card and digital/ecard
+> 2. **Is the demand real and durable?** Size the greeting-card and digital/ecard
 >    market and its growth; quantify and assess the reachability of long-distance
 >    couples, frequent travelers, and people far from family; find evidence of
 >    **willingness to pay** for digital cards and whether $1/card or a subscription is
 >    realistic; assess occasion seasonality and retention.
-> 4. **Is my wedge defensible?** Pressure-test "premium, non-templated craft +
+> 3. **Is my wedge defensible?** Pressure-test "premium, non-templated craft +
 >    AI-generated effects + frictionless link/QR sharing + a library of received
 >    cards." Do incumbents already cover this? Is the AI-effects angle a real
 >    differentiator or a gimmick?
-> 5. **GTM:** which audience/occasion to launch with, the viral/distribution loops
+> 4. **GTM:** which audience/occasion to launch with, the viral/distribution loops
 >    that actually work in this category (and what Givingli/Kudoboard did to grow),
 >    and the best channels (TikTok card-reveal content, Etsy/templates, web vs. app).
-> 6. **Business model & unit economics:** test 3-free-then-$1/card-or-subscription —
+> 5. **Business model & unit economics:** test 3-free-then-$1/card-or-subscription —
 >    margins (including AI-video generation cost per card), free-to-paid conversion,
 >    occasion-driven churn, and where gifting/gift-card attach fits (note Givingli
 >    monetizes via gift cards).
-> 7. **Top risks and red flags:** platform risk (Canva/Apple/Hallmark adding this),
+> 6. **Top risks and red flags:** platform risk (Canva/Apple/Hallmark adding this),
 >    AI commoditization, demand durability, and a short post-mortem of greeting-card
 >    apps that failed and why.
 >
