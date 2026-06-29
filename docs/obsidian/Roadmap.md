@@ -40,20 +40,22 @@ So the roadmap is: **prove the loop cheaply → build the wedge → monetize.**
 
 ---
 
-## Stage 0 — Validate (now; ~2–3 weeks; ~no new code)
+## Stage 0 — Validate (now; ~2–3 weeks; a thin maker on free tiers)
 
-The goal is one honest number. Do **not** build the app to get it.
+The goal is one honest number, on ~$0. Build only a **thin self-serve maker** —
+not the full app.
 **Full runnable spec: [[Stage-0-Concierge-Test]]** — the steps below are the
 summary.
 
-1. **Use the existing `index.html` as-is.** Hand-build ~10 personalized cards
-   for *real* recipients across both cohorts — long-distance couples (r/LongDistance,
-   LDR Discords, TikTok) **and college students** (campus subreddits, Greek life,
-   RA/dorm events, flyers with a QR code). Each card = a static file at a unique
-   URL. Recruit the *sender*, not the recipient (less bias).
-2. **Add exactly two things:** one analytics snippet (PostHog, cookieless) and a
-   single **"Make one for someone you love →"** button that appears *after* the
-   animation finishes, pointing at a form the founder fulfills by hand.
+1. **Build a thin self-serve maker on the existing engine.** A create form
+   (name/photo/message → a shareable link) that emits a card at `/c/<token>/`,
+   with a cookieless analytics snippet (PostHog) and the **"Make one for someone
+   you love →"** CTA baked into every card. No accounts, no library, no moderation
+   build. Free tiers; ~$0 per card after the one-time build.
+2. **Hand the maker link to a controlled cohort** across both audiences — long-
+   distance couples (r/LongDistance, LDR Discords, TikTok) **and college students**
+   (campus subreddits, Greek life, RA/dorm events, flyers with a QR code). Recruit
+   the *sender*, not the recipient (less bias); sends stay inside the cohort.
 3. **Also post the existing card as a TikTok/Reel** ("I built my girlfriend a
    card instead of buying one") — the artifact is the ad. Measure views, saves,
    and "how do I make this" comments.
@@ -63,11 +65,14 @@ summary.
    clip clearing ~50k views / waitlist >20%) *before* reading results, so the
    number stays honest.
 
-**Everything is faked/concierge here:** card creation (founder hand-builds), the
-"library" (a spreadsheet + "we'll email you your cards"), even gifting (manual
-Tremendous dashboard send). All of it can be tested by hand before any code.
+**What you still fake/defer:** accounts, the synced library, gifting, and the
+public-scale safety/legal floor. The *card-making* is now real and self-serve
+(that is the cheap part); everything expensive stays deferred. The "go public"
+gate (Stage-1 ops floor) is where the paid stuff turns on.
 
-**Cost:** effectively $0. **Exit:** the loop number clears the pre-committed bar.
+**Cost:** ~$0/mo — free tiers (Cloudflare/GitHub Pages + Supabase free + PostHog
+free) and a controlled cohort. **Exit:** the loop number clears the pre-committed
+bar.
 
 ---
 
@@ -116,9 +121,12 @@ Don't sell $1 cards (Stripe's $0.30 fixed fee kills micro-sales). Defer money.
   spread. Concierge-test the attach *rate* before building the integration.
 - **Premium effects + annual power-sender sub** (~$24–36/yr) via **Stripe**
   Checkout + Billing.
-- **AI as a priced upsell only:** generate-once-reuse backgrounds (Higgsfield
-  Soul images ~$0.01, amortized to ~$0/card); per-card AI video *only* as an
-  explicit ≥3×-cost upsell, never bundled (it's the one true margin killer).
+- **Premade effects = core craft, not a margin risk:** a library of effects
+  (confetti, hearts, foil, snow) — some hand-coded canvas, some **AI-generated
+  once** (~$0.01–$1 one-time each) — that any card references for ~$0 per send.
+  Part of the craft from Stage 1 onward, not a Stage-2 upsell. The *only* thing
+  gated as a priced upsell is **per-card AI generation** (a fresh render per
+  send, $0.14–$3.75/clip) — never bundled; it's the one true margin killer.
 - **The shared couple shelf** (live back-and-forth thread) — retention, not loop.
 - **Re-engagement:** lead with **email/SMS** ("your partner sent you a card"),
   which is cross-platform; add a **PWA** (add-to-home-screen + offline library)
@@ -144,7 +152,9 @@ out of early Stage 1:
 - Dynamic OG SSR (one static `og:image` in `index.html` unfurls fine for
   concierge sends)
 - The couple shelf, Dexie offline sync, web push
-- Stripe + Tremendous + any AI pipeline
+- Stripe + Tremendous + a *per-card* AI generation pipeline (premade reusable
+  effects — hand-coded or AI-made-once — are fine and cheap; just never generate
+  per send)
 
 ---
 
@@ -174,9 +184,9 @@ monitoring. See [[App-Architecture-and-Backend]] §7.
 
 | Stage | Monthly | Reality check |
 |---|---|---|
-| 0 (validate) | ~$0 | Static host + free analytics |
-| 1 (wedge, pre-public) | ~$50–80 | Supabase Pro (backups) + Resend Pro + moderation are the real floor, not $0 |
-| 1→2 (~1k–10k users) | ~$25–120 | Scales with DB/storage, not virality |
+| 0 — build maker + controlled-cohort test | **~$0** | All free tiers (Cloudflare/Pages, Supabase free, R2 free, PostHog, Tally). Domain optional ~$12/yr |
+| "Go public" gate | **~$30–80** | The paid floor turns on ONLY when strangers (not your cohort) can upload + send: Supabase Pro (backups), paid email, public-scale moderation |
+| Public, ~1k–10k users | ~$25–120 | Scales with DB/storage/photos, not virality (card views are free static assets) |
 
 ---
 

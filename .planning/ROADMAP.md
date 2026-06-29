@@ -27,14 +27,14 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Phase Details
 
 ### Phase 1: Validate the Loop
-**Goal**: Produce one honest go/no-go number on whether the craft converts recipients into senders, using the existing `index.html` with near-zero new code (Stage 0 concierge test).
+**Goal**: Produce one honest go/no-go number on whether the craft converts recipients into senders, by building a thin self-serve card maker on the existing engine and handing its link to a controlled cohort — on 100% free tiers, with the paid floor deferred to a later "go public" gate (Stage 0).
 **Mode:** mvp
 **Depends on**: Nothing (first phase)
 **Requirements**: VAL-01, VAL-02, VAL-03, VAL-04
 **Success Criteria** (what must be TRUE):
   1. A recruited recipient opening a concierge card fires `card_opened`, `card_engaged` (gated on note-bottom OR meaningful dwell, deduped, reduced-motion sessions excluded), and `cta_clicked` events to one cookieless analytics tool
-  2. After the animation settles, a "Make one for someone you love" CTA appears in the card's own voice and links to a Tally intake form the founder fulfills by hand, appending `?ref=<card_id>` for attribution
-  3. Each concierge card is live at its own obscure-slug URL (`/c/<id>/`) and unfurls a beautiful static OpenGraph preview when the link is shared in iMessage/WhatsApp/SMS
+  2. After the animation settles, a "Make one for someone you love" CTA appears in the card's own voice and drops the recipient into the same self-serve maker (carrying `?ref=<card_id>` for attribution) — no per-card hand-fulfillment
+  3. Each card the maker emits is live at its own obscure-slug URL (`/c/<token>/`) and unfurls a beautiful static OpenGraph preview when shared in iMessage/WhatsApp/SMS; sends stay within the controlled cohort (no public exposure → no moderation build yet)
   4. The concierge test has run across both cohorts (couples + college) with a decision rule pre-committed in writing before card #1, read mechanically on a ~30-day rolling window over a minimum of 10 engaged recipients
   5. The pre-committed rule yields a mechanical KILL / ITERATE / CONTINUE decision, where CONTINUE requires at least two independent verified organic-propagation events (two distinct non-recruited people who each received and requested their own)
 **Plans**: TBD

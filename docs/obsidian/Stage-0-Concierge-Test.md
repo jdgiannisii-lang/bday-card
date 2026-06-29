@@ -1,22 +1,37 @@
 # Stage 0 — The Concierge Test (concrete spec)
 
-A runnable, ~no-engineering, ~$0 experiment to answer the one question that
-gates everything: **does the craft actually convert recipients into senders?**
-Expansion of the Stage 0 section in [[Roadmap]]; uses the existing `index.html`.
+A runnable, **~$0** experiment to answer the one question that gates everything:
+**does the craft actually convert recipients into senders?** Built as a *thin
+self-serve card maker* on top of the existing `index.html`, shared with a
+*controlled cohort*, on 100% free tiers. Expansion of the Stage 0 section in
+[[Roadmap]].
 
 > Synthesized from a multi-agent design pass (metric, instrumentation,
 > recruiting, fulfillment) **plus** a validity critic and a pragmatism critic.
-> The critics materially changed the design — this doc is the *hardened*
-> version, with the most important corrections called out in **§4**. Where a
-> raw idea was wrong, only the fixed version appears here.
+> The metric model (§2) and decision rule (§3) are the *hardened* version.
+>
+> **Re-scope (2026-06-29):** the original design had the founder hand-build and
+> deploy every card by hand. That is more work than it is worth here — the card
+> already exists. Stage 0 is now a **thin self-serve maker** (the existing engine
+> + a create form → a shareable link) handed to a **controlled cohort** on free
+> tiers. This is *less* work AND a *more valid* test: recipients use the real
+> create flow, which removes the "concierge confound" the validity critic flagged.
+> Everything paid (backups, paid email, public-scale moderation) is deferred to a
+> **"go public" gate** — see §0 and the cost note.
 
 ---
 
 ## TL;DR
 
-- **Run it manually.** Hand-build personalized cards on the existing
-  `index.html`, deploy each to its own URL, and fulfill every "make one too"
-  request by hand. No app, no backend, no accounts.
+- **Thin self-serve maker, not hand-built cards.** Wrap the existing engine in a
+  tiny create form (name/photo/message → a shareable link). Build it once on free
+  tiers; then it makes cards for $0 with no per-card labor. No accounts, no
+  library, no moderation build yet.
+- **Controlled cohort + free tiers = ~$0/mo.** Hand the maker link to a known
+  test group (couples + campus); sends stay inside it. That is what lets you skip
+  the paid floor (backups, paid email, public-scale moderation) until a separate
+  **"go public" gate**. (My earlier "$50–80/mo to start" was wrong — that's the
+  go-public floor, not the startup cost.)
 - **Two cohorts in parallel:** long-distance couples *and* college students
   (campus recruiting is faster and tests the de-seasonalized family-send angle —
   see [[App-Architecture-and-Backend]] context and the audience note below).
@@ -29,13 +44,13 @@ Expansion of the Stage 0 section in [[Roadmap]]; uses the existing `index.html`.
 - **Pre-commit the decision rule in writing before card #1**, read it
   mechanically on a ~30-day window, cap iteration. This is what keeps the number
   honest.
-- **Cut the scope:** ~10 gen-0 cards over 2–3 weeks, not 15–20 in a week. One
-  founder cannot recruit + build + fulfill at the higher rate while holding a
-  24h turnaround.
+- **The limit is recruiting, not labor.** Aim for ~10–20 maker-made sends across
+  both cohorts over 2–3 weeks. You are not building each card, so volume is cheap;
+  the work is getting the maker link into the right hands.
 
 ---
 
-## 0. Day-0 setup (half a day, all free)
+## 0. Setup (build the maker — ~1–2 days, all free)
 
 1. **Hosting — already cleared.** The repo (`jdgiannisii-lang/bday-card`) is
    **public** and GitHub Pages is **live** at
@@ -56,15 +71,26 @@ Expansion of the Stage 0 section in [[Roadmap]]; uses the existing `index.html`.
 4. **The ledger — one Google Sheet** ("Card Ledger"). This is the **source of
    truth** for the decision. Schema in **§5.3**. **Paste the pre-committed
    decision rule (§6) into the header and timestamp it before you send card #1.**
-5. **A `_template/` card folder, built once** with the PostHog snippet + CTA
-   baked in and the edit slots marked, so each card is a 12–15 min copy-edit.
+5. **The thin self-serve maker, built once** — a create form (name/photo/message/
+   effect) that emits a card at `/c/<token>/` with the PostHog snippet + the CTA
+   baked into every card. Backend-free is fine to start: encode the card in the
+   URL or a tiny Supabase-free row, photo in a free image store (Supabase Storage
+   / Cloudflare R2 free tier). After this, the maker makes cards for $0 with no
+   per-card labor.
+
+**Cost at this stage: ~$0/mo.** Cloudflare/GitHub Pages ($0), Supabase free ($0),
+R2/Storage free ($0), PostHog free ($0), Tally free ($0), domain optional
+(~$12/yr). The paid floor — Supabase Pro (backups), paid email, public-scale
+moderation/CSAM — is **deferred to a separate "go public" gate** (the Phase 4 ops
+floor), and is only needed once strangers (not your controlled cohort) can upload
+and send. See [[App-Architecture-and-Backend]] §8 for the full cost model.
 
 ---
 
-## 1. The instrumented card (concrete edits to `index.html`)
+## 1. What every card carries (baked into the maker once)
 
-Make these edits **once** in `_template/index.html`; every per-card copy
-inherits them.
+The maker stamps these into every card it emits (no per-card editing). Wire them
+**once** into the engine/template:
 
 **(a) PostHog snippet** — paste before `</head>`, cookieless config:
 
@@ -153,10 +179,11 @@ appears after the animation.
    - **Priming control:** for ~⅓ of senders, deliver it purely as a gift —
      drop the word "experiment" and never ask "who'd you send it to?" A big gap
      vs. the primed group = demand characteristics are inflating the number.
-   - **Friction probe (concierge confound):** for a subset, when they request,
-     reply *"here's how you'd make one"* (point at the template) instead of
-     hand-building. The drop from "I'll make it free" to "you make it" estimates
-     how much the concierge is overstating.
+   - **Concierge confound — now largely removed.** Because the maker is
+     self-serve, recipients already use the *real* create flow, so the
+     "founder-hand-built-it" overstatement the validity critic flagged mostly
+     disappears. (If you hand-seed a few gen-0 cards, tag them so you can compare
+     hand-seeded vs. self-made conversion.)
    - **Tie-strength:** mandatory — include weak-tie couples/recipients, tag tie
      strength, report Tier 1 by it.
 4. **Verify propagation, don't take self-report.** A gen-1 event counts toward
@@ -253,24 +280,28 @@ this is an early experiment."* Honor any takedown immediately.
 
 ---
 
-## 5. Fulfillment ops (the manual loop)
+## 5. Running the loop (self-serve, controlled cohort)
 
-### 5.1 The loop, per request
-Email arrives → assign next `card_id` → copy `_template/` → `/c/<id>/` → save
-photo (crop ~3:4, <1MB) → edit slots (name, message, signoff, cover title;
-hide the milestone medallion for non-birthday occasions) → **em-dash check** →
-commit/push → phone-QA the live URL → **send the link back to the REQUESTER to
-forward themselves** (this *is* the recipient→sender behavior) → log the row.
+### 5.1 The loop (self-serve)
+A sender opens the maker link → fills the create form (name/photo/message/effect)
+→ gets a shareable link + QR for their card at `/c/<token>/` → sends it to their
+recipient themselves → the recipient opens it, the analytics fire, and the
+"Make one for someone you love →" CTA drops them straight into the *same maker*
+to create and send their own. No founder in the loop per card.
 
-**SLA: 24h** (a late "thinking of you" isn't one). ~12–18 min/card with the
-template + checklist. **Cap concurrent open requests (~10)** so the SLA holds.
+**Your job is distribution + bookkeeping, not building:** get the maker link to
+the controlled cohort, and log the generation tree (who made what, who it went
+to, who made one next) in the ledger. Optionally hand-seed a few first cards to
+kick things off, but the maker carries the volume.
 
-### 5.2 Intake form fields (Tally)
-Your name · your email/phone · recipient's first name · your relationship
-(partner/family/friend/…) · occasion (birthday/just-because/thinking-of-you/…) ·
-the message · how it's signed · **photo upload** · **"who sent you this card?
-paste the link"** (the generation key + propagation verification) · consent
-checkbox · hidden `ref` field.
+### 5.2 The maker's create form (and the generation key)
+The form captures: recipient's first name · your relationship
+(partner/family/friend/…) · occasion · the message · how it's signed ·
+**photo upload** · effect choice. Plus two tracking fields carried from the
+received card: a hidden `ref` (the `card_id` that spawned this one — the
+generation key) and an optional "who sent you the card you saw?" so propagation
+edges can be reconstructed and verified (§2). A consent checkbox covers the
+uploaded photo.
 
 ### 5.3 Ledger schema (Google Sheet — the source of truth)
 `card_id · gen · channel(warm/dm/cold) · arm(primed/unprimed/friction) ·
@@ -307,11 +338,12 @@ is a signal worth carrying into Stage 2.
 
 ## 7. Effort & timeline
 
-- **Day 0:** ~half a day (PostHog + Tally + template edits + OG image + ledger +
-  one dry-run card end-to-end).
-- **Weeks 1–3:** recruit ~10 gen-0 senders across both cohorts (cap warm ≤50%,
-  ≥4 cold); fulfill within 24h; ~30–60 min/day building + reading PostHog +
-  updating the tree.
+- **Build (Days 0–2):** the thin maker — wrap the existing engine in a create
+  form that emits a card at `/c/<token>/` with the analytics + CTA baked in, on
+  free tiers. One-time; then per-card labor is ~zero.
+- **Weeks 1–3:** recruit ~10–20 senders across both cohorts (cap warm ≤50%, ≥4
+  cold) and hand them the maker link; ~20–40 min/day reading PostHog + updating
+  the generation tree. The maker makes the cards, not you.
 - **Day ~30:** freeze, compute the two decision inputs, write the kill / iterate /
   continue call against the pre-committed rule.
 

@@ -377,20 +377,33 @@ delivered card silently breaks a "permanent" link — a wedge violation).
 
 Card *views* are static edge assets (free bandwidth on Cloudflare), so cost
 scales with DB/auth/storage, **not** with virality. Photos are the real variable.
+The paid floor turns on at a **"go public" gate**, not at build time.
 
-| Users | Infra/month | Notes |
+| Stage | Infra/month | Notes |
 |---|---|---|
-| 0 (validation) | **$0 raw, ~$50–80 real** | Free tiers work, but operating *safely* needs Supabase Pro (backups, no 7-day pause) + Resend Pro + a moderation vendor. Budget the real floor. |
-| ~1k MAU | **~$25–30** | Supabase Pro ($25) is the line that matters; Pages free, R2 near-free |
-| ~10k MAU | **~$50–120** | Supabase Pro + storage/compute; ~200GB of photos on R2 ≈ $3/mo (zero egress). Keep photos on R2, not Supabase Storage |
+| **Build + controlled-cohort test** | **~$0** | All free tiers: Cloudflare/Pages, Supabase free, R2/Storage free, PostHog free, Tally free. Domain optional ~$12/yr. Free tier is fine — no public data to protect yet, and sends stay inside a known cohort. |
+| **"Go public" gate** | **~$30–80** | Turns on ONLY when *strangers* can upload + send: Supabase Pro ($25, backups + no 7-day pause), paid email (Resend/SES), public-scale moderation (NSFW + CSAM). The legal/operational floor for public traffic — see §7. |
+| ~1k MAU (public) | **~$25–30** | Supabase Pro is the line that matters; Pages free, R2 near-free |
+| ~10k MAU (public) | **~$50–120** | Supabase Pro + storage/compute; ~200GB of photos on R2 ≈ $3/mo (zero egress). Keep photos on R2, not Supabase Storage |
 
-**Per-card margin:** handcrafted card ≈ $0.0005–0.002 → ~100% margin at any
-price; free sends are sustainable forever. **AI video is the one margin killer**
-($0.14–$3.75/clip can exceed the card price) → only ever a ≥3×-cost upsell
-($2.99+) or generate-once-reuse (a Higgsfield Soul image is ~$0.01; 50 reusable
-backgrounds for <$1). Stripe's fixed $0.30/charge also kills $1 micro-sales →
-monetize via gifting + bundled effects + an annual sub, not per-card (see
-[[Roadmap]] Stage 2).
+*(Correction: an earlier draft listed "~$50–80 real" as the **startup** cost. That's wrong — that figure is the go-public floor. Building the app and running a controlled-cohort test is ~$0.)*
+
+**Per-card margin:** a handcrafted/canvas card ≈ $0.0005–0.002 → ~100% margin at
+any price; free sends are sustainable forever.
+
+**Effects + the AI distinction (where the only real cost risk lives):**
+- **Premade reusable effects — ~$0/card, core craft.** A library of effects
+  (confetti, hearts, foil, snow): some hand-coded canvas (free to make), some
+  **AI-generated once** (a Higgsfield image ~$0.01; a short looping clip a few
+  cents to ~$1, one-time). Any card just references one; per-send cost is ~$0 (a
+  static asset on free CDN egress). Ship these from Stage 1 — they're craft, not
+  a margin risk.
+- **Per-card AI *generation* — the one margin killer.** Generating something
+  fresh on every send is $0.14–$3.75/clip and scales WITH virality (the worst
+  curve). Never bundle it; only ever a ≥3×-cost priced upsell ($2.99+).
+
+Stripe's fixed $0.30/charge also kills $1 micro-sales → monetize via gifting +
+premium effects + an annual sub, not per-card (see [[Roadmap]] Stage 2).
 
 ---
 

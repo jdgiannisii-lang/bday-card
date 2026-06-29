@@ -76,7 +76,7 @@ same session (the viral loop). If everything else fails, that must work.
 
 - **Team**: Solo founder — velocity is the scarcest resource; prefer the known stack (React + Supabase) and managed/free tiers.
 - **Tech stack**: Web-first, one codebase, edge-served; recipient view must paint with zero blocking network calls and require no auth.
-- **Budget**: Marginal cost per card ≈ $0 (deterministic canvas, free sends fuel the loop). Real pre-public infra floor ≈ $50–80/mo (Supabase Pro backups + Resend Pro + moderation), not $0.
+- **Budget**: Marginal cost per card ≈ $0 (deterministic canvas + premade reusable effects; free sends fuel the loop). Build + controlled-cohort test run on free tiers at ~$0/mo; the ~$30–80/mo paid floor (Supabase Pro backups + paid email + public-scale moderation) turns on only at a "go public" gate, not at startup.
 - **Content rule**: ZERO em-dashes in card content (HANDOFF.md — the #1 AI tell; validated by grep). Hold the taste line: handcrafted, never cheesy.
 - **Legal**: User-uploaded photos + anonymous sends → image moderation + CSAM reporting (18 USC 2258A) are mandatory before public traffic, not optional.
 - **Sequencing**: Each stage is a gate, not a date. Don't build Stage 1 until Stage 0's K-factor clears a pre-committed threshold.
