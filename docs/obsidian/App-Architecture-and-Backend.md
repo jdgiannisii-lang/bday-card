@@ -99,7 +99,9 @@ received library.** Three principles fall out of that:
 
 Why this matters: deterministic canvas effects cost **nothing** per play, so
 unlimited free sends (the fuel for virality) stay affordable forever; AI is an
-optional garnish baked to a static asset, never a per-play call.
+optional garnish baked **once** into a static asset (a premade image or
+video/animation overlay *added* to the card), never a per-play call. See §3
+"Effect types".
 
 ---
 
@@ -135,7 +137,7 @@ only reach for SvelteKit if the founder wants to.
   "schema": 1,
   "token": "k7Qm2xR9pLfa",        // 12-char nanoid → the /c/:token id
   "engineVersion": "1.4.0",        // HARD PIN → loads /r/1.4.0/engine.js, immutable
-  "effect": "loveLetter",          // a handcrafted deterministic effect module
+  "effect": "loveLetter",          // an effect-library id: a canvas module OR a premade overlay (image/video) — see "Effect types"
   "seed": 1734829112,              // drives ALL rng → reproducible + unique per card
   "theme": { "palette": "duskRose", "cardstock": "cream", "foil": "gold" },
   "occasion": "justBecause",
@@ -162,6 +164,30 @@ only reach for SvelteKit if the founder wants to.
   reduced-motion users must get the full emotional payload (photo + note +
   signoff settled), not a disabled animation. (Today's code just suppresses the
   burst — that's a craft regression to fix in the port.)
+
+**Effect types (what an `effect` can be).** The `effect` field names one entry in
+a shared effect library. Three kinds — and only the third costs anything per send:
+
+1. **Hand-coded canvas effects** (today's hearts/glitter/confetti). Written once,
+   run live, seeded-deterministic. $0 to make, ~$0/card, and they recolor to the
+   card's palette. The default.
+2. **Premade overlay assets — image OR video/animation — made once, reused.**
+   *This is the "AI video effect" sense:* e.g. a looping confetti video, a
+   foil-shimmer/sparkle loop, a snow overlay. Generated once (AI like Higgsfield,
+   or hand-made/sourced), stored as a small mp4/webm/Lottie/sprite, and *layered
+   onto* any card. One-time cost (~$0.01–$1); **~$0 per send** (a static asset on
+   free CDN egress). It's just a new library entry referenced by `effect` id —
+   not a personalized, per-recipient generation.
+3. **Per-card AI generation** — a fresh AI render on *every* send. The one true
+   margin risk ($0.14–$3.75/clip); a gated, priced upsell only (§8), never default.
+
+**Caveat for video/animation overlays (craft + perf, NOT cost):** they're heavier
+than coded effects, and the recipient's open must paint instantly. So keep them
+small, **lazy-load** them, and layer them *over* the canvas so the cover's first
+frame shows immediately and the overlay streams in behind it — never let a
+multi-MB confetti loop block the open. They also don't recolor to the card's
+palette the way a parametric canvas effect does; choose per effect whether that
+matters.
 
 **Versioning = "plays forever."** `/r/<semver>/engine.js` files are write-once,
 never deleted, served `Cache-Control: immutable`. New effects ship as new
@@ -394,10 +420,12 @@ any price; free sends are sustainable forever.
 **Effects + the AI distinction (where the only real cost risk lives):**
 - **Premade reusable effects — ~$0/card, core craft.** A library of effects
   (confetti, hearts, foil, snow): some hand-coded canvas (free to make), some
-  **AI-generated once** (a Higgsfield image ~$0.01; a short looping clip a few
-  cents to ~$1, one-time). Any card just references one; per-send cost is ~$0 (a
-  static asset on free CDN egress). Ship these from Stage 1 — they're craft, not
-  a margin risk.
+  **premade overlay assets made once** — an image *or* a **video/animation loop**
+  (a Higgsfield image ~$0.01; a short looping clip a few cents to ~$1, one-time).
+  This is the "AI video effect" sense: a premade confetti/foil/snow loop *added*
+  to a card. Any card just references one; per-send cost is ~$0 (a static asset
+  on free CDN egress). Ship these from Stage 1 — craft, not a margin risk. See §3
+  "Effect types" for the perf caveat (keep video overlays light + lazy-loaded).
 - **Per-card AI *generation* — the one margin killer.** Generating something
   fresh on every send is $0.14–$3.75/clip and scales WITH virality (the worst
   curve). Never bundle it; only ever a ≥3×-cost priced upsell ($2.99+).

@@ -122,11 +122,13 @@ Don't sell $1 cards (Stripe's $0.30 fixed fee kills micro-sales). Defer money.
 - **Premium effects + annual power-sender sub** (~$24–36/yr) via **Stripe**
   Checkout + Billing.
 - **Premade effects = core craft, not a margin risk:** a library of effects
-  (confetti, hearts, foil, snow) — some hand-coded canvas, some **AI-generated
-  once** (~$0.01–$1 one-time each) — that any card references for ~$0 per send.
-  Part of the craft from Stage 1 onward, not a Stage-2 upsell. The *only* thing
-  gated as a priced upsell is **per-card AI generation** (a fresh render per
-  send, $0.14–$3.75/clip) — never bundled; it's the one true margin killer.
+  (confetti, hearts, foil, snow) — some hand-coded canvas, some **premade overlay
+  assets made once**: an image *or* a **video/animation loop** (e.g. a confetti or
+  foil-shimmer video *added* to a card — this is the "AI video effect" sense),
+  ~$0.01–$1 one-time each, then ~$0 per send. Part of the craft from Stage 1
+  onward, not a Stage-2 upsell. The *only* thing gated as a priced upsell is
+  **per-card AI generation** (a fresh render per send, $0.14–$3.75/clip) — never
+  bundled; it's the one true margin killer.
 - **The shared couple shelf** (live back-and-forth thread) — retention, not loop.
 - **Re-engagement:** lead with **email/SMS** ("your partner sent you a card"),
   which is cross-platform; add a **PWA** (add-to-home-screen + offline library)
