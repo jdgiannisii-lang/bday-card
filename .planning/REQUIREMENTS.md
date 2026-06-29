@@ -73,17 +73,38 @@ Deferred to Stage 2 (monetize & expand). Tracked, not in the current roadmap.
 
 ## Traceability
 
-Populated during roadmap creation.
+Every v1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` for phase detail.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (to be mapped by roadmapper) | | Pending |
+| VAL-01 | Phase 1: Validate the Loop | Pending |
+| VAL-02 | Phase 1: Validate the Loop | Pending |
+| VAL-03 | Phase 1: Validate the Loop | Pending |
+| VAL-04 | Phase 1: Validate the Loop | Pending |
+| ENG-01 | Phase 2: Deterministic Engine & Frictionless Open | Pending |
+| ENG-02 | Phase 2: Deterministic Engine & Frictionless Open | Pending |
+| ENG-03 | Phase 2: Deterministic Engine & Frictionless Open | Pending |
+| ENG-04 | Phase 2: Deterministic Engine & Frictionless Open | Pending |
+| SHR-04 | Phase 2: Deterministic Engine & Frictionless Open | Pending |
+| SHR-01 | Phase 3: Editor, Share & Received Library | Pending |
+| SHR-02 | Phase 3: Editor, Share & Received Library | Pending |
+| SHR-03 | Phase 3: Editor, Share & Received Library | Pending |
+| LIB-01 | Phase 3: Editor, Share & Received Library | Pending |
+| LIB-02 | Phase 3: Editor, Share & Received Library | Pending |
+| LIB-03 | Phase 3: Editor, Share & Received Library | Pending |
+| LIB-04 | Phase 3: Editor, Share & Received Library | Pending |
+| OPS-01 | Phase 4: Trust, Safety & Ops Floor | Pending |
+| OPS-02 | Phase 4: Trust, Safety & Ops Floor | Pending |
+| OPS-03 | Phase 4: Trust, Safety & Ops Floor | Pending |
+| OPS-04 | Phase 4: Trust, Safety & Ops Floor | Pending |
+| OPS-05 | Phase 4: Trust, Safety & Ops Floor | Pending |
 
 **Coverage:**
 - v1 requirements: 21 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 21 ⚠️
+- Mapped to phases: 21 ✓
+- Unmapped: 0
+- v2 (MON-01..03, EXP-01..03): intentionally deferred to Stage 2, not mapped
 
 ---
 *Requirements defined: 2026-06-29*
-*Last updated: 2026-06-29 after initial definition*
+*Last updated: 2026-06-29 after roadmap creation (traceability mapped)*
