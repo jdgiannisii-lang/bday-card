@@ -15,8 +15,18 @@ Companion to [[App-Architecture-and-Backend]], [[Initial-Recommendations]], and
 ## North star
 
 > **The tasteful, zero-friction card layer for people who are apart** — launched
-> to long-distance couples, grown on a recipient→sender loop, monetized through
-> gifting, not the card.
+> to long-distance couples **and college students away from family**, grown on a
+> recipient→sender loop, monetized through gifting, not the card.
+
+**Two beachhead cohorts (parallel, not either/or):** long-distance couples
+(high-cadence, symmetric, digital-native — the cleanest loop) and college
+students (denser/faster to recruit, more send-occasions per person, and a
+**de-seasonalizing** angle — across millions of students, parent/family
+birthdays land on all 365 days, smoothing the seasonality that kills occasion
+cards). Couples are largely a *subset* (many college relationships are
+long-distance), so we don't choose. Note the riskiest link in the student
+cohort: an older recipient (parent/grandparent) converting to a *sender*
+in-browser — measure that explicitly.
 
 ## The one question that gates everything
 
@@ -30,13 +40,17 @@ So the roadmap is: **prove the loop cheaply → build the wedge → monetize.**
 
 ---
 
-## Stage 0 — Validate (now; days, not weeks; ~no new code)
+## Stage 0 — Validate (now; ~2–3 weeks; ~no new code)
 
-The goal is one honest number, fast. Do **not** build the app to get it.
+The goal is one honest number. Do **not** build the app to get it.
+**Full runnable spec: [[Stage-0-Concierge-Test]]** — the steps below are the
+summary.
 
-1. **Use the existing `index.html` as-is.** Hand-build 20–40 personalized cards
-   for *real* long-distance couples (recruit via r/LongDistance, TikTok comment
-   DMs, friends-of-friends). Each card = a static file at a unique URL.
+1. **Use the existing `index.html` as-is.** Hand-build ~10 personalized cards
+   for *real* recipients across both cohorts — long-distance couples (r/LongDistance,
+   LDR Discords, TikTok) **and college students** (campus subreddits, Greek life,
+   RA/dorm events, flyers with a QR code). Each card = a static file at a unique
+   URL. Recruit the *sender*, not the recipient (less bias).
 2. **Add exactly two things:** one analytics snippet (PostHog, cookieless) and a
    single **"Make one for someone you love →"** button that appears *after* the
    animation finishes, pointing at a form the founder fulfills by hand.
