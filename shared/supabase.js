@@ -112,7 +112,11 @@ export async function saveCard(formData) {
     // (e.g. /bday-card/). saveCard runs from the maker, which sits at the app root,
     // so the directory of the current path IS the app root.
     const base = location.pathname.slice(0, location.pathname.lastIndexOf("/") + 1);
-    const url = `${location.origin}${base}c/${token}/`;
+    // Use the ?c= form (card.html?c=<token>): on GitHub Pages it returns HTTP 200
+    // so link previews render in iMessage/WhatsApp, whereas a clean /c/<token>/
+    // path returns 404 (SPA fallback) and can suppress the preview. The clean
+    // route still works for anyone who has such a link.
+    const url = `${location.origin}${base}card.html?c=${token}`;
     return { token, url };
   } catch (err) {
     return { error: err };
