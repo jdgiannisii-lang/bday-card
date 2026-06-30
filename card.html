@@ -244,6 +244,52 @@
     box-shadow: 0 1px 2px rgba(70,54,45,.12);
   }
 
+  /* Photo-booth strip (2+ photos). The reveal wraps the strip; on open the engine
+     sets its px height and CSS transitions it, so the strip appears to roll out
+     downward (overflow:hidden masks what has not unrolled yet). */
+  .photostrip-reveal {
+    flex: 0 0 auto;
+    align-self: center;
+    height: 0;
+    overflow: hidden;
+    transition: height .95s cubic-bezier(.2,.8,.2,1);
+  }
+  .photostrip {
+    position: relative;
+    background: #fffdf8;
+    padding: 10px 10px 16px;
+    border-radius: 4px;
+    box-shadow: 0 12px 24px rgba(70,54,45,.24), 0 2px 6px rgba(70,54,45,.18);
+    transform: rotate(-1deg);
+  }
+  /* Subtle film perforations down both white margins. */
+  .photostrip::before, .photostrip::after {
+    content: "";
+    position: absolute; top: 9px; bottom: 9px; width: 4px;
+    background-image: radial-gradient(circle, rgba(70,54,45,.15) 0 1.5px, transparent 1.7px);
+    background-size: 4px 11px; background-repeat: repeat-y;
+  }
+  .photostrip::before { left: 3px; }
+  .photostrip::after  { right: 3px; }
+  .strip-cell {
+    display: block;
+    width: 132px; height: 99px;
+    margin: 0 4px 6px;
+    overflow: hidden;
+    background: #eccdd2;
+    border-radius: 1px;
+    box-shadow: inset 0 0 0 1px rgba(70,54,45,.06);
+  }
+  .strip-cell:last-child { margin-bottom: 0; }
+  .strip-cell img { width: 100%; height: 100%; object-fit: cover; object-position: center 42%; display: block; }
+  .photostrip-reveal.rolled .photostrip { animation: strip-settle 1.2s ease-out .12s both; }
+  @keyframes strip-settle {
+    0%   { transform: rotate(-2.4deg) translateY(-3px); }
+    45%  { transform: rotate(.9deg); }
+    72%  { transform: rotate(-.5deg); }
+    100% { transform: rotate(-1deg); }
+  }
+
   .greeting {
     font-family: 'Cormorant Garamond', serif;
     font-weight: 600;
@@ -516,6 +562,9 @@
     .polaroid { transform: rotate(-3deg); }
     .signoff { align-self: flex-end; }
     .cta { transition: none; }
+    .photostrip-reveal { transition: none; }
+    .photostrip-reveal.rolled .photostrip { animation: none; }
+    .photostrip { transform: rotate(-1deg); }
   }
 </style>
 </head>
@@ -533,6 +582,10 @@
           <div class="tape"></div>
           <img class="pic" src="" alt="Card photo" />
           <div class="cap"></div>
+        </div>
+
+        <div class="photostrip-reveal" id="photostripReveal" aria-hidden="true">
+          <div class="photostrip" id="photostrip"></div>
         </div>
 
         <h1 class="greeting"></h1>
@@ -948,6 +1001,22 @@
     petalLayer.innerHTML = html;
   }
 
+  /* Photo-booth strip: roll out its height on open. The bridge builds the cells
+     (2+ photos) into #photostrip; here we just reveal them by transitioning the
+     wrapper height from 0 to the strip's natural height. Reduced motion jumps to
+     full height with no transition. Safe to call when no strip was built. */
+  function openStrip() {
+    var reveal = document.getElementById("photostripReveal");
+    if (!reveal) return;
+    var inner = reveal.querySelector(".photostrip");
+    if (!inner || !inner.childNodes.length) return; // 0 or 1 photo: no strip
+    if (reduceMotion) reveal.style.transition = "none";
+    reveal.style.height = inner.offsetHeight + "px";
+    reveal.classList.add("rolled");
+    setTimeout(refreshCue, reduceMotion ? 0 : 1000);
+  }
+  window.__openStrip = openStrip;
+
   var isOpen = false;
   function openCard() {
     if (isOpen) return;
@@ -956,6 +1025,7 @@
     if (scroller) scroller.scrollTop = 0;
     inside.classList.remove("read");
     setTimeout(burst, reduceMotion ? 0 : 440);
+    setTimeout(openStrip, reduceMotion ? 0 : 520);
     setTimeout(dropEmojis, reduceMotion ? 0 : 520);
     setTimeout(startDrizzle, reduceMotion ? 0 : 1300);
     setTimeout(function () { replay.classList.add("show"); }, reduceMotion ? 0 : 1500);
@@ -973,6 +1043,8 @@
     ctx.clearRect(0, 0, W, H);
     if (scroller) scroller.scrollTop = 0;
     inside.classList.remove("has-more", "read");
+    var reveal = document.getElementById("photostripReveal");
+    if (reveal) { reveal.classList.remove("rolled"); reveal.style.transition = ""; reveal.style.height = "0px"; }
   }
   card.addEventListener("click", openCard);
   card.addEventListener("keydown", function (e) {

@@ -94,6 +94,19 @@
     border: none; background: var(--rose-deep); color: #fff; font-size: 15px; cursor: pointer; line-height: 1;
   }
 
+  /* Multi-photo preview: a row of small polaroid thumbs (up to 5). Their order is
+     the order they roll out in the photo-booth strip. */
+  .thumbs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .thumbs:empty { margin-top: 0; }
+  .thumbs .thumb { padding: 5px 5px 15px; transform: rotate(-2deg); }
+  .thumbs .thumb:nth-child(even) { transform: rotate(2deg); }
+  .thumbs .thumb img { width: 64px; height: 76px; }
+  .thumbs .thumb .rm { top: -8px; right: -8px; width: 22px; height: 22px; font-size: 12px; }
+  .thumbs .idx {
+    position: absolute; bottom: 2px; left: 0; right: 0; text-align: center;
+    font-family: 'Caveat', cursive; font-size: 12px; color: var(--ink-soft);
+  }
+
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid transparent;
@@ -159,19 +172,14 @@
       </div>
 
       <div class="field">
-        <label class="lbl">Add a photo</label>
+        <label class="lbl">Add photos</label>
         <label class="dropzone" id="dropzone" tabindex="0">
           <svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
-          <span>Add a photo</span>
-          <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" />
+          <span id="dropLabel">Add photos</span>
+          <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" multiple />
         </label>
-        <div class="hint">One photo, portrait looks best.</div>
-        <div class="thumb-wrap" id="thumbWrap">
-          <div class="thumb">
-            <img id="thumbImg" alt="Your photo" />
-            <button type="button" class="rm" id="removePhoto" aria-label="Remove photo">&#10005;</button>
-          </div>
-        </div>
+        <div class="hint">Up to 5. Two or more roll out as a photo-booth strip.</div>
+        <div class="thumbs" id="thumbs" aria-live="polite"></div>
         <div class="photo-removed" id="photoRemoved" aria-live="polite"></div>
         <div class="err" id="err-photo"></div>
       </div>
@@ -276,9 +284,8 @@
   const form = document.getElementById("makerForm");
   const photoInput = document.getElementById("photo");
   const dropzone = document.getElementById("dropzone");
-  const thumbWrap = document.getElementById("thumbWrap");
-  const thumbImg = document.getElementById("thumbImg");
-  const removePhoto = document.getElementById("removePhoto");
+  const dropLabel = document.getElementById("dropLabel");
+  const thumbs = document.getElementById("thumbs");
   const submitBtn = document.getElementById("submitBtn");
   const making = document.getElementById("making");
   const share = document.getElementById("share");
@@ -290,7 +297,8 @@
   const qrCanvas = document.getElementById("qrCanvas");
   const previewLink = document.getElementById("previewLink");
 
-  let photoBlob = null;
+  const MAX_PHOTOS = 5;
+  let photoBlobs = []; // [{ blob, url }] in strip order
   let occasion = "justBecause";
   let effect = "hearts";
 
@@ -327,37 +335,65 @@
   // Photo select: downscale to a JPEG under the max edge BEFORE preview and upload
   // (shared/photo.js). On a decode/oversize failure show the matching UI-SPEC copy
   // instead of a blank polaroid, and leave the dropzone ready for another try.
+  // Up to 5 photos. Their order is the strip order. Each is downscaled to a JPEG
+  // before preview/upload (shared/photo.js). A decode/oversize failure on one file
+  // shows the matching UI-SPEC copy and skips that file; the rest still add.
+  function renderThumbs() {
+    thumbs.innerHTML = "";
+    photoBlobs.forEach((item, i) => {
+      const fig = document.createElement("div");
+      fig.className = "thumb";
+      const img = document.createElement("img");
+      img.alt = "Photo " + (i + 1);
+      img.src = item.url;
+      const rm = document.createElement("button");
+      rm.type = "button";
+      rm.className = "rm";
+      rm.setAttribute("aria-label", "Remove photo " + (i + 1));
+      rm.textContent = "✕";
+      rm.addEventListener("click", () => {
+        URL.revokeObjectURL(item.url);
+        photoBlobs.splice(i, 1);
+        renderThumbs();
+        syncDropzone();
+        photoRemoved.textContent = "Photo removed.";
+      });
+      const idx = document.createElement("span");
+      idx.className = "idx";
+      idx.textContent = String(i + 1);
+      fig.appendChild(img);
+      fig.appendChild(rm);
+      fig.appendChild(idx);
+      thumbs.appendChild(fig);
+    });
+  }
+  function syncDropzone() {
+    const full = photoBlobs.length >= MAX_PHOTOS;
+    dropzone.style.display = full ? "none" : "flex";
+    dropLabel.textContent = photoBlobs.length === 0
+      ? "Add photos"
+      : "Add more (" + photoBlobs.length + "/" + MAX_PHOTOS + ")";
+  }
   photoInput.addEventListener("change", async () => {
-    const file = photoInput.files && photoInput.files[0];
-    if (!file) return;
+    const files = Array.from(photoInput.files || []);
+    photoInput.value = ""; // let the same file be picked again after a remove
+    if (!files.length) return;
     setErr("err-photo", "");
     photoRemoved.textContent = "";
-    try {
-      const blob = await downscalePhoto(file);
-      photoBlob = blob;
-      const reader = new FileReader();
-      reader.onload = () => {
-        thumbImg.src = reader.result;
-        thumbWrap.style.display = "flex";
-        dropzone.style.display = "none";
-      };
-      reader.readAsDataURL(blob);
-    } catch (err) {
-      photoBlob = null;
-      photoInput.value = "";
-      thumbWrap.style.display = "none";
-      dropzone.style.display = "flex";
-      const code = err instanceof PhotoError ? err.code : "decode";
-      setErr("err-photo", photoErrCopy(code));
+    let skipped = 0;
+    for (const file of files) {
+      if (photoBlobs.length >= MAX_PHOTOS) { skipped++; continue; }
+      try {
+        const blob = await downscalePhoto(file);
+        photoBlobs.push({ blob: blob, url: URL.createObjectURL(blob) });
+        renderThumbs();
+        syncDropzone();
+      } catch (err) {
+        const code = err instanceof PhotoError ? err.code : "decode";
+        setErr("err-photo", photoErrCopy(code));
+      }
     }
-  });
-  removePhoto.addEventListener("click", () => {
-    photoBlob = null;
-    photoInput.value = "";
-    thumbWrap.style.display = "none";
-    dropzone.style.display = "flex";
-    setErr("err-photo", "");
-    photoRemoved.textContent = "Photo removed.";
+    if (skipped > 0) setErr("err-photo", "You can add up to " + MAX_PHOTOS + " photos.");
   });
 
   form.addEventListener("submit", async (e) => {
@@ -382,7 +418,8 @@
 
     const result = await saveCard({
       recipientName, message, signoff,
-      occasion, effect, photoBlob,
+      occasion, effect,
+      photoBlobs: photoBlobs.map((p) => p.blob),
       refCardId, generation,
     });
 
@@ -405,7 +442,8 @@
       referred: !!refCardId,
       occasion: occasion,
       effect: effect,
-      has_photo: !!photoBlob,
+      has_photo: photoBlobs.length > 0,
+      photo_count: photoBlobs.length,
       // Soft propagation evidence for the ledger (Stage 0 spec 5.2). Self-report
       // only; the ledger verifies real edges, PostHog corroborates.
       who_sent_you: whoSentYou || null,

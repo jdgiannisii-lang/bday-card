@@ -65,16 +65,24 @@ export async function saveCard(formData) {
     const client = await getClient();
     const token = await mintToken();
 
-    let photo_url = null;
-    if (data.photoBlob) {
-      const path = `photos/${token}.jpg`; // unguessable: the token is a nanoid
+    // Photos: accept an array (photoBlobs, in strip order) or a single photoBlob
+    // for back-compat. Each uploads to an unguessable path under the token.
+    // photo_url keeps the first photo (single-polaroid + back-compat); content.photos
+    // carries all of them so the engine can roll out a photo-booth strip (2+).
+    const blobs = Array.isArray(data.photoBlobs)
+      ? data.photoBlobs.filter(Boolean)
+      : (data.photoBlob ? [data.photoBlob] : []);
+    const photo_urls = [];
+    for (let i = 0; i < blobs.length; i++) {
+      const path = `photos/${token}-${i}.jpg`; // token is a nanoid: unguessable
       const up = await client.storage
         .from(PHOTO_BUCKET)
-        .upload(path, data.photoBlob, { contentType: "image/jpeg", upsert: false });
+        .upload(path, blobs[i], { contentType: "image/jpeg", upsert: false });
       if (up.error) return { error: up.error };
       const pub = client.storage.from(PHOTO_BUCKET).getPublicUrl(path);
-      photo_url = pub && pub.data ? pub.data.publicUrl : null;
+      if (pub && pub.data && pub.data.publicUrl) photo_urls.push(pub.data.publicUrl);
     }
+    const photo_url = photo_urls.length ? photo_urls[0] : null;
 
     // Card text content. Message is split into paragraphs by the caller or here;
     // we keep it as an array of non empty lines so the engine bridge can render
@@ -92,6 +100,7 @@ export async function saveCard(formData) {
       signoff: data.signoff || "",
       coverTitle: data.coverTitle || "",
       caption: data.caption || "",
+      photos: photo_urls,
     };
 
     const row = {

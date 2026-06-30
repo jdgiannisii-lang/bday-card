@@ -52,14 +52,48 @@ export function applyCardToEngine(row) {
   const greetingText = (OCCASION_GREETING[occ] || OCCASION_GREETING.justBecause)(name);
   setLines(greetingEl, greetingText.split("\n"));
 
-  // Photo: set the polaroid image src and optional caption.
-  const picEl = doc.querySelector(".polaroid .pic");
-  if (picEl) {
-    if (row.photo_url) {
-      picEl.setAttribute("src", row.photo_url);
+  // Photos. 2 or more -> a photo-booth strip that rolls out on open; exactly 1 ->
+  // the existing single tilted polaroid; 0 -> neither shows. content.photos (the
+  // URL array) is preferred; row.photo_url is the back-compat single-photo path.
+  const photos = Array.isArray(content.photos) ? content.photos.filter(Boolean) : [];
+  const single = photos.length ? photos[0] : (row.photo_url || null);
+  const polaroidEl = doc.querySelector(".polaroid");
+  const stripEl = doc.querySelector("#photostrip");
+
+  if (photos.length >= 2 && stripEl) {
+    // Build the strip: one white-framed cell per photo, in order. src is one of
+    // our own storage URLs (set via setAttribute, no innerHTML on any value).
+    if (polaroidEl) polaroidEl.style.display = "none";
+    while (stripEl.firstChild) stripEl.removeChild(stripEl.firstChild);
+    photos.forEach((url, i) => {
+      const cell = doc.createElement("div");
+      cell.className = "strip-cell";
+      const img = doc.createElement("img");
+      img.setAttribute("src", url);
+      img.setAttribute("alt", name ? `Photo ${i + 1} for ${name}` : `Photo ${i + 1}`);
+      img.setAttribute("loading", "eager");
+      cell.appendChild(img);
+      stripEl.appendChild(cell);
+    });
+    const reveal = doc.querySelector("#photostripReveal");
+    if (reveal) reveal.setAttribute("aria-hidden", "false");
+    // If the recipient flipped the card open before this row arrived, roll the
+    // strip out now; otherwise openCard() triggers it on open.
+    try {
+      if (doc.querySelector(".card.opened") && typeof window !== "undefined" && window.__openStrip) {
+        window.__openStrip();
+      }
+    } catch (e) {}
+  } else {
+    // Single (or zero) photo: the existing polaroid path.
+    const picEl = doc.querySelector(".polaroid .pic");
+    if (picEl) {
+      if (single) picEl.setAttribute("src", single);
+      picEl.setAttribute("alt", name ? `Photo for ${name}` : "Card photo");
     }
-    picEl.setAttribute("alt", name ? `Photo for ${name}` : "Card photo");
+    if (polaroidEl && !single) polaroidEl.style.display = "none";
   }
+
   const capEl = doc.querySelector(".polaroid .cap");
   if (capEl) capEl.textContent = content.caption || "";
 
