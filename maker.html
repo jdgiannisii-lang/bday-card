@@ -130,6 +130,15 @@
     background: transparent; color: var(--rose-deep); font-family: 'Outfit', sans-serif; font-size: 15px; cursor: pointer;
   }
   .again { display: inline-block; margin-top: 16px; font-family: 'Caveat', cursive; font-size: 20px; color: var(--rose-deep); cursor: pointer; border-bottom: 1.5px solid var(--rose); }
+  .preview { display: inline-block; margin: 16px 0 0 18px; font-family: 'Caveat', cursive; font-size: 20px; color: var(--rose-deep); text-decoration: none; border-bottom: 1.5px solid var(--rose); }
+
+  /* Share-state QR */
+  .qr-wrap { display: flex; flex-direction: column; align-items: center; margin-top: 24px; }
+  .qr-wrap canvas, .qr-wrap img { width: 168px; height: 168px; background: var(--paper); border-radius: var(--radius); padding: 8px; }
+  .qr-cap { font-family: 'Caveat', cursive; font-size: 16px; color: var(--ink-soft); margin-top: 8px; }
+
+  /* Caption confirming a low-stakes photo removal (UI-SPEC). */
+  .photo-removed { font-family: 'Caveat', cursive; font-size: 15px; color: var(--ink-soft); margin-top: 8px; text-align: center; min-height: 0; }
 </style>
 </head>
 <body>
@@ -163,6 +172,8 @@
             <button type="button" class="rm" id="removePhoto" aria-label="Remove photo">&#10005;</button>
           </div>
         </div>
+        <div class="photo-removed" id="photoRemoved" aria-live="polite"></div>
+        <div class="err" id="err-photo"></div>
       </div>
 
       <div class="field">
@@ -175,6 +186,12 @@
       <div class="field">
         <label class="lbl" for="signoff">How you sign it</label>
         <input type="text" id="signoff" name="signoff" placeholder="With love, JD" maxlength="60" />
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="whoSentYou">Who sent you the card you saw?</label>
+        <input type="text" id="whoSentYou" name="whoSentYou" maxlength="80" autocomplete="off" placeholder="Optional" />
+        <div class="hint">Optional. It helps us see how cards travel.</div>
       </div>
 
       <div class="field">
@@ -200,7 +217,7 @@
         <label for="consent">I have permission to use this photo, and I understand this is an early experiment.</label>
       </div>
 
-      <button type="submit" class="submit" id="submitBtn">Get my link</button>
+      <button type="submit" class="submit" id="submitBtn" disabled>Get my link</button>
       <div class="making" id="making" aria-live="polite"></div>
       <div class="err" id="err-save"></div>
     </form>
@@ -214,7 +231,12 @@
           <input type="text" id="shareLink" readonly />
           <button type="button" class="copy" id="copyBtn">Copy link</button>
         </div>
+        <div class="qr-wrap">
+          <canvas id="qrCanvas" aria-label="QR code for your card link"></canvas>
+          <div class="qr-cap">Or let them scan this.</div>
+        </div>
         <span class="again" id="makeAnother">Make another</span>
+        <a class="preview" id="previewLink" target="_blank" rel="noopener">Preview it</a>
       </div>
     </div>
 
@@ -223,6 +245,18 @@
 <script type="module">
   import { saveCard } from "./shared/supabase.js";
   import { initAnalytics, track } from "./shared/analytics.js";
+  import { downscalePhoto, PhotoError } from "./shared/photo.js";
+
+  // QR for the share state. Major pinned, ESM from the CDN to match the no-build
+  // approach (research Standard Stack). Loaded lazily so the form paints without
+  // waiting on the QR library; it is only needed once a link exists.
+  let _QRCode = null;
+  async function getQRCode() {
+    if (_QRCode) return _QRCode;
+    const mod = await import(/* @vite-ignore */ "https://esm.sh/qrcode@1");
+    _QRCode = mod.default || mod;
+    return _QRCode;
+  }
 
   // The maker carries ?ref=<card_id>&g=<gen> from a card someone received, for
   // generation attribution. Read but do not require them.
@@ -249,10 +283,20 @@
   const shareLink = document.getElementById("shareLink");
   const copyBtn = document.getElementById("copyBtn");
   const makeAnother = document.getElementById("makeAnother");
+  const consentBox = document.getElementById("consent");
+  const photoRemoved = document.getElementById("photoRemoved");
+  const qrCanvas = document.getElementById("qrCanvas");
+  const previewLink = document.getElementById("previewLink");
 
   let photoBlob = null;
   let occasion = "justBecause";
   let effect = "hearts";
+
+  // Consent is required to enable submit (UI-SPEC / Stage 0 spec 5.2). The button
+  // ships disabled and unlocks only when the box is checked.
+  function syncConsent() { submitBtn.disabled = !consentBox.checked; }
+  consentBox.addEventListener("change", syncConsent);
+  syncConsent();
 
   // Single select chip groups.
   function wireChips(groupId, setter) {
@@ -268,28 +312,51 @@
   wireChips("occasionChips", (v) => { occasion = v; });
   wireChips("effectChips", (v) => { effect = v; });
 
-  // Photo select: show a taped polaroid style thumbnail. Raw blob for the
-  // skeleton; downscale and HEIC handling land in Plan 03.
-  photoInput.addEventListener("change", () => {
+  function setErr(id, msg) { document.getElementById(id).textContent = msg || ""; }
+
+  // Map a PhotoError code to the verbatim UI-SPEC copy. A decode failure is the
+  // iPhone-HEIC-on-non-Safari case (research Pitfall 3): ask for a JPEG plainly.
+  function photoErrCopy(code) {
+    if (code === "too_large") return "That photo's a little big. Try one under 10MB.";
+    if (code === "decode") return "That didn't go through. Try a JPEG photo instead.";
+    return "That didn't go through. Check your connection and try again.";
+  }
+
+  // Photo select: downscale to a JPEG under the max edge BEFORE preview and upload
+  // (shared/photo.js). On a decode/oversize failure show the matching UI-SPEC copy
+  // instead of a blank polaroid, and leave the dropzone ready for another try.
+  photoInput.addEventListener("change", async () => {
     const file = photoInput.files && photoInput.files[0];
     if (!file) return;
-    photoBlob = file;
-    const reader = new FileReader();
-    reader.onload = () => {
-      thumbImg.src = reader.result;
-      thumbWrap.style.display = "flex";
-      dropzone.style.display = "none";
-    };
-    reader.readAsDataURL(file);
+    setErr("err-photo", "");
+    photoRemoved.textContent = "";
+    try {
+      const blob = await downscalePhoto(file);
+      photoBlob = blob;
+      const reader = new FileReader();
+      reader.onload = () => {
+        thumbImg.src = reader.result;
+        thumbWrap.style.display = "flex";
+        dropzone.style.display = "none";
+      };
+      reader.readAsDataURL(blob);
+    } catch (err) {
+      photoBlob = null;
+      photoInput.value = "";
+      thumbWrap.style.display = "none";
+      dropzone.style.display = "flex";
+      const code = err instanceof PhotoError ? err.code : "decode";
+      setErr("err-photo", photoErrCopy(code));
+    }
   });
   removePhoto.addEventListener("click", () => {
     photoBlob = null;
     photoInput.value = "";
     thumbWrap.style.display = "none";
     dropzone.style.display = "flex";
+    setErr("err-photo", "");
+    photoRemoved.textContent = "Photo removed.";
   });
-
-  function setErr(id, msg) { document.getElementById(id).textContent = msg || ""; }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -298,11 +365,13 @@
     const recipientName = document.getElementById("recipientName").value.trim();
     const message = document.getElementById("message").value.trim();
     const signoff = document.getElementById("signoff").value.trim();
-    const consent = document.getElementById("consent").checked;
+    const whoSentYou = document.getElementById("whoSentYou").value.trim();
+    const consent = consentBox.checked;
 
     let ok = true;
     if (!recipientName) { setErr("err-name", "Add their first name"); ok = false; }
     if (!message) { setErr("err-message", "Write a note first"); ok = false; }
+    // Consent is enforced by the disabled submit; this is the belt-and-braces path.
     if (!consent) { setErr("err-save", "Please confirm the checkbox to continue."); ok = false; }
     if (!ok) return;
 
@@ -315,10 +384,11 @@
       refCardId, generation,
     });
 
-    submitBtn.disabled = false;
     making.textContent = "";
 
     if (!result || result.error) {
+      // Re-enable per consent so the sender can retry (UI-SPEC retry affordance).
+      syncConsent();
       setErr("err-save", "We couldn't make your link just now. Give it another try.");
       return;
     }
@@ -334,11 +404,26 @@
       occasion: occasion,
       effect: effect,
       has_photo: !!photoBlob,
+      // Soft propagation evidence for the ledger (Stage 0 spec 5.2). Self-report
+      // only; the ledger verifies real edges, PostHog corroborates.
+      who_sent_you: whoSentYou || null,
     });
 
     shareLink.value = result.url;
+    previewLink.href = result.url;
     form.style.display = "none";
     share.style.display = "block";
+
+    // Render the QR for the same /c/<token>/ link. The library is lazy and the
+    // card is already shareable via the link field, so a QR failure (CDN hiccup)
+    // hides the QR block but never breaks the share state.
+    try {
+      const QRCode = await getQRCode();
+      await QRCode.toCanvas(qrCanvas, result.url, { width: 168, margin: 1 });
+    } catch (err) {
+      const wrap = qrCanvas.closest(".qr-wrap");
+      if (wrap) wrap.style.display = "none";
+    }
   });
 
   copyBtn.addEventListener("click", async () => {
