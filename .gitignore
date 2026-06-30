@@ -2,6 +2,9 @@
 # environment fills its own). Copy shared/config.example.js to shared/config.js.
 shared/config.js
 
+# Playwright UI smoke-test captures (regenerated on every run, never committed).
+tests/screenshots/
+
 # OS / editor noise
 .DS_Store
 Thumbs.db
