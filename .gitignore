@@ -1,0 +1,7 @@
+# Real Supabase keys live here (public by design, but kept out of git so each
+# environment fills its own). Copy shared/config.example.js to shared/config.js.
+shared/config.js
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
