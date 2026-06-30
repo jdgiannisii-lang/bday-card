@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 1
 current_phase_name: Validate the Loop
 status: executing
-stopped_at: Plan 01-01 AUTO tasks 1-3 shipped; paused at Task 4 human-verify checkpoint (Supabase setup + live loop)
-last_updated: "2026-06-30T04:39:58.285Z"
+stopped_at: Plan 01-03 AUTO tasks 1-4 shipped; paused at Task 5 human-verify checkpoint (create + timestamp the Google Sheet ledger, confirm the maker live)
+last_updated: "2026-06-30T05:18:00.000Z"
 last_activity: 2026-06-30
-last_activity_desc: Plan 01-01 Walking Skeleton tasks 1-3 shipped
+last_activity_desc: Plan 01-03 maker hardening, decision ledger, and Playwright smoke-test (AUTO tasks done)
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 0
   percent: 0
 ---
 
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 ## Current Position
 
 Phase: 1 of 4 (Validate the Loop)
-Plan: 01 of 3 in current phase (AUTO tasks done; human-verify checkpoint pending)
+Plan: 3 of 3 in current phase (AUTO tasks done; human-verify checkpoint pending)
 Status: Executing (paused at checkpoint)
-Last activity: 2026-06-30 — Plan 01-01 Walking Skeleton tasks 1-3 shipped
+Last activity: 2026-06-30. Plan 01-03 maker hardening + decision ledger + Playwright smoke-test (AUTO tasks done)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01 P02 | 4min | 2 tasks | 6 files |
+| Phase 01 P03 | 18min | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,11 @@ Recent decisions affecting current work:
 - [01-01]: card.html and 404.html are byte-identical (GitHub Pages SPA fallback); must be mirrored until Phase 2 adds real routing.
 - [Phase ?]: Dwell threshold kept at the D-02 default 8000ms as a single named constant; dwell_ms recorded on card_engaged for dry-run retuning
 - [Phase ?]: card_engaged wired off the engine's existing .read class via MutationObserver (not the 1500ms reveal timer); module dedupes so jitter is harmless (D-02)
+- [01-03]: Photo downscale is browser-native (createImageBitmap + canvas.toBlob, MAX_EDGE 1600, quality 0.8, 10MB cap); typed PhotoError(code) lets the maker map one throw to the right UI-SPEC copy (HEIC decode failure = ask for a JPEG, research Pitfall 3).
+- [01-03]: who-sent-you is threaded into the card_created PostHog event (who_sent_you), not a new cards column, to avoid a schema change; it is soft propagation evidence the ledger verifies.
+- [01-03]: qrcode@1 imported lazily from esm.sh (major-pinned) into a share-state canvas; consent checkbox gates submit (button ships disabled).
+- [01-03]: docs/Stage-0-Decision-Ledger.md is the pre-committed VAL-04 instrument (D-03 thresholds + 21-column generation-tree schema); the Google Sheet is the source of truth and must be timestamped before card #1.
+- [01-03]: UI verified via tests/ui-smoke.mjs (global Playwright, no build); the live create-to-open-to-CTA chain PASSED against Supabase. tests/screenshots/ is gitignored.
 
 ### Pending Todos
 
@@ -98,6 +104,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30T04:39:35.681Z
-Stopped at: Plan 01-01 AUTO tasks 1-3 shipped; Task 4 human-verify checkpoint pending (Supabase project + card-photos bucket + 0001_cards.sql + real anon keys, then live create-to-open loop)
-Resume file: .planning/phases/01-validate-the-loop/01-01-PLAN.md
+Last session: 2026-06-30T05:18:00.000Z
+Stopped at: Plan 01-03 AUTO tasks 1-4 shipped; Task 5 human-verify checkpoint pending (founder creates + timestamps the Google Sheet ledger from the 21-column schema before card #1, then confirms the maker live: validation/consent, oversize + HEIC photo handling, QR scan, Copy link, the /c/<token>/ CTA back into the maker)
+Resume file: .planning/phases/01-validate-the-loop/01-03-PLAN.md

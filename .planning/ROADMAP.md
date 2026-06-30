@@ -20,7 +20,7 @@ deferred and tracked as v2 (MON/EXP), not in this roadmap.
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Validate the Loop** - Stage 0 concierge test on the existing card; a mechanically-read go/no-go GATE on verified organic propagation
+- [x] **Phase 1: Validate the Loop** - Stage 0 concierge test on the existing card; a mechanically-read go/no-go GATE on verified organic propagation (completed 2026-06-30)
 - [ ] **Phase 2: Deterministic Engine & Frictionless Open** - Port the craft into a seeded, versioned canvas engine that paints `/c/:token` instantly with zero blocking calls
 - [ ] **Phase 3: Editor, Share & Received Library** - Create/personalize, share by link + QR, capture to a device shelf, save to a synced library, and send one back in-session
 - [ ] **Phase 4: Trust, Safety & Ops Floor** - The non-optional pre-public-traffic GATE: moderation/CSAM, rate-limiting, email deliverability, backups, legal, monitoring
@@ -41,12 +41,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. The concierge test has run across both cohorts (couples + college) with a decision rule pre-committed in writing before card #1, read mechanically on a ~30-day rolling window over a minimum of 10 engaged recipients
   5. The pre-committed rule yields a mechanical KILL / ITERATE / CONTINUE decision, where CONTINUE requires at least two independent verified organic-propagation events (two distinct non-recruited people who each received and requested their own)
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans complete
 Plans:
 
 - [x] 01-01-PLAN.md (Wave 1) Walking Skeleton: Supabase + create form + /c/<token>/ open playing the engine (VAL-01, VAL-03; D-01, D-04)
 - [x] 01-02-PLAN.md (Wave 2) Cookieless analytics, D-02 engaged-gating, and the CTA loop-close with ref attribution (VAL-01, VAL-02; D-02, D-03)
-- [ ] 01-03-PLAN.md (Wave 3) Maker hardening (validation, photo downscale, QR, copy) + the pre-committed decision ledger (VAL-03, VAL-04; D-03)
+- [x] 01-03-PLAN.md (Wave 3) Maker hardening (validation, photo downscale, QR, copy) + the pre-committed decision ledger (VAL-03, VAL-04; D-03)
 
 **UI hint**: yes
 
@@ -115,7 +115,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Validate the Loop | 2/3 | In Progress|  |
+| 1. Validate the Loop | 3/3 | Complete   | 2026-06-30 |
 | 2. Deterministic Engine & Frictionless Open | 0/TBD | Not started | - |
 | 3. Editor, Share & Received Library | 0/TBD | Not started | - |
 | 4. Trust, Safety & Ops Floor | 0/TBD | Not started | - |
