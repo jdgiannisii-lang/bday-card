@@ -41,6 +41,11 @@ jobs:
           export const POSTHOG_KEY = "${{ vars.POSTHOG_KEY }}";
           export const POSTHOG_HOST = "${{ vars.POSTHOG_HOST }}";
           EOF
+          # upload-pages-artifact honors .gitignore, which lists shared/config.js,
+          # so the generated file would be excluded from the published site. Drop
+          # that one line for THIS build only (the runner's checkout; the committed
+          # .gitignore is never changed).
+          sed -i.bak '/shared\/config\.js/d' .gitignore && rm -f .gitignore.bak
           echo "Wrote shared/config.js (SUPABASE_URL set: ${{ vars.SUPABASE_URL != '' }}, POSTHOG_KEY set: ${{ vars.POSTHOG_KEY != '' }})"
 
       # Turns GitHub Pages on for this repo (source = GitHub Actions)
