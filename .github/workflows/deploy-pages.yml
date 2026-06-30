@@ -26,6 +26,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Generate shared/config.js at deploy time from repository Variables.
+      # config.js is gitignored (never in git history); these are all PUBLIC
+      # client keys by design (Supabase anon/publishable, PostHog phc_). Set them
+      # under Settings -> Secrets and variables -> Actions -> Variables:
+      #   SUPABASE_URL, SUPABASE_ANON_KEY, POSTHOG_KEY, POSTHOG_HOST
+      - name: Write client config from repository variables
+        run: |
+          mkdir -p shared
+          cat > shared/config.js <<EOF
+          // GENERATED AT DEPLOY from repository Variables. Public client keys only.
+          export const SUPABASE_URL = "${{ vars.SUPABASE_URL }}";
+          export const SUPABASE_ANON_KEY = "${{ vars.SUPABASE_ANON_KEY }}";
+          export const POSTHOG_KEY = "${{ vars.POSTHOG_KEY }}";
+          export const POSTHOG_HOST = "${{ vars.POSTHOG_HOST }}";
+          EOF
+          echo "Wrote shared/config.js (SUPABASE_URL set: ${{ vars.SUPABASE_URL != '' }}, POSTHOG_KEY set: ${{ vars.POSTHOG_KEY != '' }})"
+
       # Turns GitHub Pages on for this repo (source = GitHub Actions)
       # so no manual settings change is needed.
       - name: Configure Pages
