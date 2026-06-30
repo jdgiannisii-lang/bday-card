@@ -557,7 +557,7 @@
   <canvas id="fx" aria-hidden="true"></canvas>
   <button class="replay" id="replay" type="button">read it again</button>
   <div class="cta" id="cta">
-    <a href="/maker.html" id="ctaLink">Make one for someone you love &#8594;</a>
+    <a href="maker.html" id="ctaLink">Make one for someone you love &#8594;</a>
     <span class="cta-sub">It's free, and it takes a minute.</span>
   </div>
   <div class="retry" id="retry">This card is taking a moment. Tap to try again.</div>
@@ -941,10 +941,19 @@
 
   // Thread ?ref and ?g onto the CTA so the next maker visit attributes the
   // generation. We do this client side; it does not block the open.
+  // The app root is "/" on localhost but "/<repo>/" on a project Pages site. A card
+  // opens either at a clean /c/<token>/ path (prod 404 fallback) or at
+  // /card.html?c=<token> (localhost). Resolve the root for both so the CTA points
+  // at the real maker, not the domain root.
+  function appRoot() {
+    var p = location.pathname;
+    var m = p.match(/^(.*\/)c\/[^/]+\/?$/);
+    return m ? m[1] : p.slice(0, p.lastIndexOf("/") + 1);
+  }
   function wireCta(token, generation) {
     var link = document.getElementById("ctaLink");
     if (!link || !token) return;
-    link.href = "/maker.html?ref=" + encodeURIComponent(token) + "&g=" + (generation + 1);
+    link.href = appRoot() + "maker.html?ref=" + encodeURIComponent(token) + "&g=" + (generation + 1);
   }
 
   // Fire cta_clicked on tap, then let the link navigate normally. Fire and forget

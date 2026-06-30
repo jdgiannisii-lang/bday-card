@@ -107,7 +107,12 @@ export async function saveCard(formData) {
     const ins = await client.from("cards").insert(row);
     if (ins.error) return { error: ins.error };
 
-    const url = `${location.origin}/c/${token}/`;
+    // Build the share URL relative to the app's deployment directory so it works
+    // both at the domain root (localhost) and under a project Pages subpath
+    // (e.g. /bday-card/). saveCard runs from the maker, which sits at the app root,
+    // so the directory of the current path IS the app root.
+    const base = location.pathname.slice(0, location.pathname.lastIndexOf("/") + 1);
+    const url = `${location.origin}${base}c/${token}/`;
     return { token, url };
   } catch (err) {
     return { error: err };
