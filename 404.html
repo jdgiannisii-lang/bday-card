@@ -587,9 +587,11 @@
      hand coded variants only, no new effect code). window.CARD_EFFECT is set by
      the engine bridge from the card row before the card is opened. */
   function configFor(effect) {
-    if (effect === "confetti") return { hearts: 10, petals: 10, confetti: 150, foil: 40, ambientPetals: 6 };
-    if (effect === "petals")   return { hearts: 8,  petals: 90, confetti: 14,  foil: 10, ambientPetals: 14 };
-    return { hearts: 60, petals: 22, confetti: 40, foil: 20, ambientPetals: 9 }; /* hearts (default) */
+    if (effect === "confetti") return { hearts: 10, petals: 10, confetti: 150, foil: 40, sparkles: 18, balloons: 0,  ambientPetals: 6 };
+    if (effect === "petals")   return { hearts: 8,  petals: 90, confetti: 14,  foil: 10, sparkles: 10, balloons: 0,  ambientPetals: 14 };
+    if (effect === "sparkles") return { hearts: 6,  petals: 6,  confetti: 8,   foil: 70, sparkles: 90, balloons: 0,  ambientPetals: 8 };
+    if (effect === "balloons") return { hearts: 16, petals: 8,  confetti: 30,  foil: 22, sparkles: 18, balloons: 16, ambientPetals: 7 };
+    return { hearts: 60, petals: 22, confetti: 40, foil: 20, sparkles: 16, balloons: 0, ambientPetals: 9 }; /* hearts (default) */
   }
   var CONFIG = configFor(window.CARD_EFFECT);
 
@@ -647,6 +649,20 @@
     c.closePath();
   }
 
+  /* A sharp 4 point sparkle (twinkle). Outer points N/E/S/W, deep concave
+     sides for a glint, drawn at radius s. Hand coded canvas, no assets (D-04). */
+  function sparklePath(c, s) {
+    var inner = s * 0.18;
+    c.beginPath();
+    for (var k = 0; k < 8; k++) {
+      var ang = (Math.PI / 4) * k - Math.PI / 2;
+      var r = (k % 2 === 0) ? s : inner;
+      var px = Math.cos(ang) * r, py = Math.sin(ang) * r;
+      if (k === 0) c.moveTo(px, py); else c.lineTo(px, py);
+    }
+    c.closePath();
+  }
+
   function burst() {
     if (reduceMotion) return;
     var ox = W / 2, oy = H * 0.44;
@@ -678,6 +694,25 @@
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(1, 5), g: rand(.1, .2),
         size: rand(2, 4), rot: 0, vr: 0, tw: rand(0, 6.28),
         color: pick(["#f3dca0", "#cba455", "#fff4d2"]), life: 1, decay: rand(.01, .02) });
+    }
+    /* Sparkles: a gold twinkle that bursts with the rest and drifts down slowly,
+       pulsing its alpha and size for a shimmer. */
+    for (i = 0; i < (CONFIG.sparkles || 0); i++) {
+      a = rand(0, Math.PI * 2); sp = rand(2, 10);
+      particles.push({ kind: "sparkle", x: ox + rand(-30, 30), y: oy + rand(-30, 30),
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(1, 5), g: rand(.04, .12),
+        size: rand(5, 13), rot: rand(0, 6.28), vr: rand(-.08, .08),
+        tw: rand(0, 6.28), sway: rand(0, 6.28),
+        color: pick(["#f3dca0", "#fff4d2", "#cba455", "#edcd80"]), life: 1, decay: rand(.006, .012) });
+    }
+    /* Balloons: rise from below the screen with a gentle sway, slow fade. They go
+       UP (negative vy plus a slight buoyancy g), unlike every other particle. */
+    for (i = 0; i < (CONFIG.balloons || 0); i++) {
+      particles.push({ kind: "balloon", x: rand(W * 0.1, W * 0.9), y: H + rand(10, 150),
+        vx: rand(-0.5, 0.5), vy: rand(-3.2, -1.8), g: -rand(.005, .02),
+        size: rand(15, 24), rot: rand(-.18, .18), vr: rand(-.01, .01),
+        sway: rand(0, 6.28), color: pick(["#c25470", "#e58a64", "#e6b3bf", "#cba455", "#d97a8e"]),
+        life: 1, decay: rand(.0016, .003) });
     }
     startLoop();
   }
@@ -820,7 +855,7 @@
       if (p.sway !== undefined) { p.sway += .05; p.x += Math.sin(p.sway) * .7; }
       p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vx *= .995;
       p.life -= p.decay;
-      if (p.y > H + 40 || p.life <= 0) { p.life = 0; continue; }
+      if (p.y > H + 40 || p.y < -140 || p.life <= 0) { p.life = 0; continue; }
       alive++;
 
       ctx.save();
@@ -843,6 +878,40 @@
         ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.ellipse(0, 0, p.size * .6, p.size, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.kind === "sparkle") {
+        p.tw += .25;
+        var tk = .35 + .65 * (.5 + .5 * Math.sin(p.tw));
+        ctx.globalAlpha *= tk;
+        ctx.rotate(p.rot);
+        // Additive blend so the gold glint reads as light against the warm paper
+        // (restore() at the end of this particle resets the composite op).
+        ctx.globalCompositeOperation = "lighter";
+        var ss = p.size * (.6 + .4 * tk);
+        ctx.fillStyle = p.color;
+        sparklePath(ctx, ss);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,252,240," + (0.8 * tk) + ")";
+        ctx.beginPath(); ctx.arc(0, 0, Math.max(1, ss * .16), 0, Math.PI * 2); ctx.fill();
+      } else if (p.kind === "balloon") {
+        ctx.rotate(p.rot + Math.sin(p.sway) * .12);
+        var bs = p.size;
+        ctx.strokeStyle = "rgba(70,54,45,.26)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, bs);
+        ctx.quadraticCurveTo(bs * .32, bs * 1.5, 0, bs * 2.0);
+        ctx.stroke();
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, bs * .78, bs, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-bs * .14, bs * .96); ctx.lineTo(bs * .14, bs * .96); ctx.lineTo(0, bs * 1.14);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,.38)";
+        ctx.beginPath();
+        ctx.ellipse(-bs * .28, -bs * .32, bs * .16, bs * .26, -0.5, 0, Math.PI * 2);
         ctx.fill();
       } else {
         p.tw += .35;

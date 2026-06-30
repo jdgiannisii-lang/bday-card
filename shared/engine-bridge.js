@@ -92,10 +92,12 @@ export function applyCardToEngine(row) {
   const milestoneEl = doc.querySelector(".milestone");
   if (milestoneEl) milestoneEl.style.display = occ === "birthday" ? "" : "none";
 
-  // Effect: select among the engine's existing hand coded variants only. The
-  // hosted engine reads window.CARD_EFFECT to bias its CONFIG; we do not add new
-  // effect code (D-04). Allowed values: hearts, confetti, petals.
-  const effect = row.effect === "confetti" || row.effect === "petals" ? row.effect : "hearts";
+  // Effect: select among the engine's hand coded canvas variants only. The hosted
+  // engine reads window.CARD_EFFECT to bias its CONFIG; the bridge never paints,
+  // it only picks a name (D-04: hand coded canvas effects, no premade video).
+  // Allowed values: hearts, confetti, petals, sparkles, balloons.
+  const ALLOWED_EFFECTS = ["hearts", "confetti", "petals", "sparkles", "balloons"];
+  const effect = ALLOWED_EFFECTS.indexOf(row.effect) !== -1 ? row.effect : "hearts";
   try {
     window.CARD_EFFECT = effect;
   } catch (e) {
