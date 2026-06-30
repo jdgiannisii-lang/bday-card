@@ -4,11 +4,11 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 1
 current_phase_name: Validate the Loop
-status: planning
-stopped_at: Phase 1 planned (3 plans, verified) + Playwright UI verification added
-last_updated: "2026-06-30T01:08:50.528Z"
-last_activity: 2026-06-29
-last_activity_desc: Roadmap created (4 phases, 21/21 v1 requirements mapped)
+status: executing
+stopped_at: Plan 01-01 AUTO tasks 1-3 shipped; paused at Task 4 human-verify checkpoint (Supabase setup + live loop)
+last_updated: "2026-06-30T01:59:18Z"
+last_activity: 2026-06-30
+last_activity_desc: Executed plan 01-01 Walking Skeleton (tasks 1-3); awaiting human-verify checkpoint
 progress:
   total_phases: 4
   completed_phases: 0
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-06-29)
 ## Current Position
 
 Phase: 1 of 4 (Validate the Loop)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-06-29 — Roadmap created (4 phases, 21/21 v1 requirements mapped)
+Plan: 01 of 3 in current phase (AUTO tasks done; human-verify checkpoint pending)
+Status: Executing (paused at checkpoint)
+Last activity: 2026-06-30 — Plan 01-01 Walking Skeleton tasks 1-3 shipped
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -66,6 +66,10 @@ Recent decisions affecting current work:
 - [Roadmap]: Phases aligned to the founder's staged structure — Stage 0 validate, then Stage 1 wedge; Stage 2 (MON/EXP) deferred as v2.
 - [Roadmap]: Phase 1 is a GATE with a pre-committed kill/continue decision; Phases 2-4 are conditional on Stage 0 clearing verified organic propagation.
 - [Roadmap]: Phase 4 (Trust/Safety/Ops) is a pre-public-traffic GATE; several criteria are legal ship-blockers (CSAM reporting, moderation, backups, legal docs).
+- [01-01]: Client config via gitignored shared/config.js + committed shared/config.example.js (REPLACE_ME); code ships without live Supabase keys.
+- [01-01]: esm.sh CDN imports made lazy (dynamic import) so shared modules import cleanly under Node for structural checks; browser behavior unchanged.
+- [01-01]: Effect chips re-bias the existing engine CONFIG counts via window.CARD_EFFECT; no new effect code (D-04). index.html left untouched.
+- [01-01]: card.html and 404.html are byte-identical (GitHub Pages SPA fallback); must be mirrored until Phase 2 adds real routing.
 
 ### Pending Todos
 
@@ -91,6 +95,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30T01:08:50.519Z
-Stopped at: Phase 1 planned (3 plans, verified) + Playwright UI verification added
+Last session: 2026-06-30T01:59:18Z
+Stopped at: Plan 01-01 AUTO tasks 1-3 shipped; Task 4 human-verify checkpoint pending (Supabase project + card-photos bucket + 0001_cards.sql + real anon keys, then live create-to-open loop)
 Resume file: .planning/phases/01-validate-the-loop/01-01-PLAN.md
