@@ -970,13 +970,20 @@
   //    revealing the CTA).
   function wireEngagement() {
     var inside = document.querySelector(".face.inside");
+    var scroller = document.getElementById("insideScroll");
+    // Only count "note bottom" as real engagement when the note actually overflows
+    // and was scrolled to the end. A short note that fits on open is NOT instant
+    // engagement; it engages via the dwell timer (>=8s visible) instead, so the
+    // engaged signal stays honest (D-02). Without this gate a short note fires
+    // card_engaged about a second after open, overstating the conversion.
+    function noteOverflows() { return scroller && (scroller.scrollHeight - scroller.clientHeight > 6); }
+    function maybeEngageBottom() {
+      if (inside.classList.contains("read") && noteOverflows()) markEngagedOnBottom();
+    }
     if (inside && typeof MutationObserver !== "undefined") {
-      var obs = new MutationObserver(function () {
-        if (inside.classList.contains("read")) markEngagedOnBottom();
-      });
+      var obs = new MutationObserver(maybeEngageBottom);
       obs.observe(inside, { attributes: true, attributeFilter: ["class"] });
-      // In case .read is already present (very short notes can be at bottom on open).
-      if (inside.classList.contains("read")) markEngagedOnBottom();
+      maybeEngageBottom();
     }
 
     // Start the dwell fallback on the real open. We hook the same trigger the
@@ -1010,8 +1017,13 @@
     // then wire the CTA + the engaged hooks. card_opened fires here: opening the
     // page IS the open for the recipient (the cover is already painted and the
     // tap-to-flip is the same gesture). We fire once on load.
-    initAnalytics({ cardId: token || "unknown", generation: generation, reduceMotion: reduceMotion });
-    track("card_opened");
+    // Fire card_opened only AFTER analytics is ready. initAnalytics is async (it
+    // lazy-loads posthog, then registers the super props); firing synchronously
+    // here would no-op because window.posthog is not set yet, silently losing the
+    // funnel's denominator. The .then keeps it fire-and-forget and never blocks the
+    // card fetch below, which runs in parallel.
+    initAnalytics({ cardId: token || "unknown", generation: generation, reduceMotion: reduceMotion })
+      .then(function () { track("card_opened"); });
 
     wireCta(token, generation);
     wireCtaAnalytics();
