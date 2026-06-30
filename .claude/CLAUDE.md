@@ -446,3 +446,9 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 > Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.
 > This section is managed by `generate-claude-profile` -- do not edit manually.
 <!-- GSD:profile-end -->
+
+<!-- project-rule (manual, keep across GSD regen): UI verification -->
+
+## UI Verification (project rule)
+
+**Any UI/UX built or changed in this repo MUST be verified with Playwright before it's considered done** — render the page, screenshot each surface, and exercise the core flow (for Phase 1: create card → get link/QR → open `/c/<token>/` and watch it play → tap "Make one for someone you love" → land back in the maker). Fix anything that looks or behaves wrong. Do not rely on "the code looks right." The `claude-in-chrome` extension is not connected here — use the local/global Playwright install. This applies to every frontend phase (the maker form, the card view, the share state, the CTA reveal).
