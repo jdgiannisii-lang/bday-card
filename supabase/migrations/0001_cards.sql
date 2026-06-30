@@ -48,3 +48,14 @@ create policy "public create cards"
 
 -- Intentionally NO update or delete policy for anon. Cards stay immutable and
 -- non deletable by the public; the founder deletes a row to unpublish a card.
+
+-- Storage upload policy (added during Phase 1 verification). A PUBLIC bucket only
+-- grants public READ of its objects; the anon role still needs an explicit INSERT
+-- policy to UPLOAD a photo. Without this, saveCard's photo upload fails with an
+-- RLS error and the whole card create fails. Scoped to the card-photos bucket:
+-- anon may insert a photo but never update, delete, or list.
+create policy "anon upload card-photos"
+  on storage.objects
+  for insert
+  to anon
+  with check (bucket_id = 'card-photos');
