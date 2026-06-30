@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>A card for you</title>
 
+<script>
+  // This page is served at the app root on localhost (card.html?c=...) but at the
+  // deep /c/<token>/ path in production (the 404 SPA fallback). The inline module
+  // below imports ./shared/*.js relative to the document base, so on the deep path
+  // those would resolve to /<repo>/c/<token>/shared/* and 404. Set <base> to the
+  // app root first so relative module imports and assets resolve correctly in both.
+  (function () {
+    var p = location.pathname;
+    var m = p.match(/^(.*\/)c\/[^/]+\/?$/);
+    var root = m ? m[1] : p.slice(0, p.lastIndexOf("/") + 1);
+    var b = document.createElement("base");
+    b.href = root;
+    document.head.appendChild(b);
+  })();
+</script>
+
 <!--
   STATIC OpenGraph meta. These must be literal HTML in the served head, never
   JS injected, because link preview crawlers do not run JavaScript (research
