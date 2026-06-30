@@ -37,7 +37,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Each card the maker emits is live at its own obscure-slug URL (`/c/<token>/`) and unfurls a beautiful static OpenGraph preview when shared in iMessage/WhatsApp/SMS; sends stay within the controlled cohort (no public exposure → no moderation build yet)
   4. The concierge test has run across both cohorts (couples + college) with a decision rule pre-committed in writing before card #1, read mechanically on a ~30-day rolling window over a minimum of 10 engaged recipients
   5. The pre-committed rule yields a mechanical KILL / ITERATE / CONTINUE decision, where CONTINUE requires at least two independent verified organic-propagation events (two distinct non-recruited people who each received and requested their own)
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 01-01-PLAN.md (Wave 1) Walking Skeleton: Supabase + create form + /c/<token>/ open playing the engine (VAL-01, VAL-03; D-01, D-04)
+- [ ] 01-02-PLAN.md (Wave 2) Cookieless analytics, D-02 engaged-gating, and the CTA loop-close with ref attribution (VAL-01, VAL-02; D-02, D-03)
+- [ ] 01-03-PLAN.md (Wave 3) Maker hardening (validation, photo downscale, QR, copy) + the pre-committed decision ledger (VAL-03, VAL-04; D-03)
 **UI hint**: yes
 
 > GATE: This phase carries a pre-committed kill/continue decision. Phases 2-4 are conditional
@@ -96,7 +100,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Validate the Loop | 0/TBD | Not started | - |
+| 1. Validate the Loop | 0/3 | Planned | - |
 | 2. Deterministic Engine & Frictionless Open | 0/TBD | Not started | - |
 | 3. Editor, Share & Received Library | 0/TBD | Not started | - |
 | 4. Trust, Safety & Ops Floor | 0/TBD | Not started | - |
