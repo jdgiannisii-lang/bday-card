@@ -11,8 +11,8 @@ its pre-committed threshold.
 
 ### Validation (Stage 0 — concierge, ~no new app code)
 
-- [ ] **VAL-01**: The existing card fires analytics events (opened, engaged, CTA-clicked) via one cookieless tool, with "engaged" gated on real engagement (note read or meaningful dwell), not a fixed timer
-- [ ] **VAL-02**: A "Make one for someone you love →" CTA appears after the animation and links to an intake form the founder fulfills by hand
+- [x] **VAL-01**: The existing card fires analytics events (opened, engaged, CTA-clicked) via one cookieless tool, with "engaged" gated on real engagement (note read or meaningful dwell), not a fixed timer
+- [x] **VAL-02**: A "Make one for someone you love →" CTA appears after the animation and links to an intake form the founder fulfills by hand
 - [ ] **VAL-03**: Each concierge card is deployed at a unique, individually-trackable URL with static OpenGraph meta so shared links unfurl beautifully
 - [ ] **VAL-04**: The concierge test runs across both cohorts (couples + college) with a decision rule pre-committed before the first card, read mechanically on a ~30-day window, with go/no-go resting on verified organic propagation
 
@@ -77,8 +77,8 @@ Every v1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` for p
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VAL-01 | Phase 1: Validate the Loop | Pending |
-| VAL-02 | Phase 1: Validate the Loop | Pending |
+| VAL-01 | Phase 1: Validate the Loop | Complete |
+| VAL-02 | Phase 1: Validate the Loop | Complete |
 | VAL-03 | Phase 1: Validate the Loop | Pending |
 | VAL-04 | Phase 1: Validate the Loop | Pending |
 | ENG-01 | Phase 2: Deterministic Engine & Frictionless Open | Pending |
@@ -100,6 +100,7 @@ Every v1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` for p
 | OPS-05 | Phase 4: Trust, Safety & Ops Floor | Pending |
 
 **Coverage:**
+
 - v1 requirements: 21 total
 - Mapped to phases: 21 ✓
 - Unmapped: 0

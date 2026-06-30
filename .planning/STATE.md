@@ -6,14 +6,14 @@ current_phase: 1
 current_phase_name: Validate the Loop
 status: executing
 stopped_at: Plan 01-01 AUTO tasks 1-3 shipped; paused at Task 4 human-verify checkpoint (Supabase setup + live loop)
-last_updated: "2026-06-30T01:59:18Z"
+last_updated: "2026-06-30T04:39:58.285Z"
 last_activity: 2026-06-30
-last_activity_desc: Executed plan 01-01 Walking Skeleton (tasks 1-3); awaiting human-verify checkpoint
+last_activity_desc: Plan 01-01 Walking Skeleton tasks 1-3 shipped
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 2
   percent: 0
 ---
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P02 | 4min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [01-01]: esm.sh CDN imports made lazy (dynamic import) so shared modules import cleanly under Node for structural checks; browser behavior unchanged.
 - [01-01]: Effect chips re-bias the existing engine CONFIG counts via window.CARD_EFFECT; no new effect code (D-04). index.html left untouched.
 - [01-01]: card.html and 404.html are byte-identical (GitHub Pages SPA fallback); must be mirrored until Phase 2 adds real routing.
+- [Phase ?]: Dwell threshold kept at the D-02 default 8000ms as a single named constant; dwell_ms recorded on card_engaged for dry-run retuning
+- [Phase ?]: card_engaged wired off the engine's existing .read class via MutationObserver (not the 1500ms reveal timer); module dedupes so jitter is harmless (D-02)
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30T01:59:18Z
+Last session: 2026-06-30T04:39:35.681Z
 Stopped at: Plan 01-01 AUTO tasks 1-3 shipped; Task 4 human-verify checkpoint pending (Supabase project + card-photos bucket + 0001_cards.sql + real anon keys, then live create-to-open loop)
 Resume file: .planning/phases/01-validate-the-loop/01-01-PLAN.md
