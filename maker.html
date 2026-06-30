@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Make a card</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+  /* Tokens inherited verbatim from index.html :root. No new hex values. */
+  :root {
+    --paper:      #f8f1e3;
+    --paper-warm: #f3e8d4;
+    --paper-edge: #e7d8bf;
+    --ink:        #46362d;
+    --ink-soft:   #7a685b;
+    --rose:       #c25470;
+    --rose-deep:  #9e3a55;
+    --blush:      #e6b3bf;
+    --gold-hi:    #f3dca0;
+    --gold-mid:   #cba455;
+    --gold-lo:    #9c7833;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; }
+
+  body {
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1100px 760px at 50% 22%, #fbf4e8 0%, #f3e3d3 46%, #ecd8c4 100%);
+    background-attachment: fixed;
+    padding: 48px 0;
+  }
+
+  .wrap { width: min(92vw, 420px); margin: 0 auto; }
+
+  /* Surface C: maker landing header */
+  .eyebrow {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .34em;
+    color: var(--ink-soft); font-weight: 500; text-align: center;
+  }
+  .display {
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 600;
+    font-size: clamp(40px, 13vw, 60px); line-height: 1.06; text-align: center;
+    margin: 8px 0 0;
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold-mid) 55%, var(--gold-lo));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .subhead {
+    text-align: center; color: var(--ink-soft); font-size: 16px; line-height: 1.5;
+    margin: 16px auto 0; max-width: 30ch;
+  }
+
+  form { margin-top: 32px; }
+  .field { margin-bottom: 24px; }
+  label.lbl {
+    display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .34em;
+    color: var(--ink-soft); font-weight: 500; margin-bottom: 8px;
+  }
+  .hint { font-family: 'Caveat', cursive; font-size: 15px; color: var(--ink-soft); line-height: 1.32; margin-top: 4px; }
+
+  input[type=text], textarea {
+    width: 100%; font-family: 'Outfit', sans-serif; font-size: 16px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--paper-edge); border-radius: var(--radius);
+    padding: 12px 14px; line-height: 1.5;
+  }
+  input::placeholder, textarea::placeholder { color: var(--ink-soft); }
+  input:focus, textarea:focus, .dropzone:focus-within {
+    outline: 2px solid var(--rose); outline-offset: 1px;
+  }
+  textarea { resize: vertical; min-height: 96px; }
+
+  .dropzone {
+    background: var(--paper-warm); border: 1px dashed var(--paper-edge); border-radius: var(--radius);
+    min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: var(--ink-soft); cursor: pointer; text-align: center; padding: 16px;
+  }
+  .dropzone svg { width: 28px; height: 28px; stroke: var(--ink-soft); fill: none; stroke-width: 1.6; }
+  .dropzone input[type=file] { display: none; }
+  .thumb-wrap { display: none; justify-content: center; margin-top: 8px; }
+  .thumb {
+    background: #fff; padding: 8px 8px 22px; border-radius: 8px; transform: rotate(-3deg);
+    box-shadow: 0 10px 20px rgba(70,54,45,.22); position: relative;
+  }
+  .thumb img { display: block; width: 130px; height: 156px; object-fit: cover; object-position: center 40%; }
+  .thumb .rm {
+    position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 999px;
+    border: none; background: var(--rose-deep); color: #fff; font-size: 15px; cursor: pointer; line-height: 1;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid transparent;
+    background: var(--paper-warm); color: var(--ink-soft); font-family: 'Outfit', sans-serif; font-size: 15px;
+    cursor: pointer; display: inline-flex; align-items: center;
+  }
+  .chip[aria-pressed="true"] { border-color: var(--rose); color: var(--rose-deep); }
+
+  .consent { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: var(--ink-soft); line-height: 1.4; }
+  .consent input { margin-top: 3px; }
+
+  .err { color: var(--rose-deep); font-size: 14px; margin-top: 4px; min-height: 0; }
+
+  .submit {
+    width: 100%; min-height: 48px; margin-top: 32px; border: none; border-radius: var(--radius);
+    background: var(--rose); color: var(--paper); font-family: 'Outfit', sans-serif; font-weight: 500;
+    font-size: 16px; cursor: pointer;
+  }
+  .submit:disabled { opacity: .6; cursor: default; }
+  .making { font-family: 'Caveat', cursive; font-size: 16px; color: var(--ink-soft); text-align: center; margin-top: 12px; min-height: 0; }
+
+  /* Surface B: share state */
+  .share { display: none; }
+  .share-card {
+    background: var(--paper-warm); border-radius: var(--radius); padding: 24px;
+    box-shadow: 0 10px 20px rgba(70,54,45,.22); margin-top: 32px;
+  }
+  .share h2 { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: clamp(26px, 7vw, 34px); margin: 0; line-height: 1.06; }
+  .share p { color: var(--ink-soft); font-size: 16px; line-height: 1.5; }
+  .link-row { display: flex; gap: 8px; margin-top: 16px; }
+  .link-row input { flex: 1; }
+  .copy {
+    min-height: 44px; padding: 0 16px; border-radius: var(--radius); border: 1.5px solid var(--rose);
+    background: transparent; color: var(--rose-deep); font-family: 'Outfit', sans-serif; font-size: 15px; cursor: pointer;
+  }
+  .again { display: inline-block; margin-top: 16px; font-family: 'Caveat', cursive; font-size: 20px; color: var(--rose-deep); cursor: pointer; border-bottom: 1.5px solid var(--rose); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- Surface C: maker landing header -->
+    <p class="eyebrow">FOR SOMEONE YOU LOVE</p>
+    <h1 class="display">Make a card</h1>
+    <p class="subhead">A little hand-animated card they open right in their browser. No app, no signup.</p>
+
+    <!-- Surface A: create form -->
+    <form id="makerForm" novalidate>
+
+      <div class="field">
+        <label class="lbl" for="recipientName">Their first name</label>
+        <input type="text" id="recipientName" name="recipientName" maxlength="40" autocomplete="off" />
+        <div class="err" id="err-name"></div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Add a photo</label>
+        <label class="dropzone" id="dropzone" tabindex="0">
+          <svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <span>Add a photo</span>
+          <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" />
+        </label>
+        <div class="hint">One photo, portrait looks best.</div>
+        <div class="thumb-wrap" id="thumbWrap">
+          <div class="thumb">
+            <img id="thumbImg" alt="Your photo" />
+            <button type="button" class="rm" id="removePhoto" aria-label="Remove photo">&#10005;</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="message">Your note</label>
+        <textarea id="message" name="message"></textarea>
+        <div class="hint">Write it like you'd say it.</div>
+        <div class="err" id="err-message"></div>
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="signoff">How you sign it</label>
+        <input type="text" id="signoff" name="signoff" placeholder="With love, JD" maxlength="60" />
+      </div>
+
+      <div class="field">
+        <label class="lbl">What's the occasion?</label>
+        <div class="chips" id="occasionChips" role="group">
+          <button type="button" class="chip" data-value="justBecause" aria-pressed="true">Just because</button>
+          <button type="button" class="chip" data-value="thinkingOfYou" aria-pressed="false">Thinking of you</button>
+          <button type="button" class="chip" data-value="birthday" aria-pressed="false">Birthday</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Pick the magic</label>
+        <div class="chips" id="effectChips" role="group">
+          <button type="button" class="chip" data-value="hearts" aria-pressed="true">Hearts</button>
+          <button type="button" class="chip" data-value="confetti" aria-pressed="false">Confetti</button>
+          <button type="button" class="chip" data-value="petals" aria-pressed="false">Petals</button>
+        </div>
+      </div>
+
+      <div class="field consent">
+        <input type="checkbox" id="consent" />
+        <label for="consent">I have permission to use this photo, and I understand this is an early experiment.</label>
+      </div>
+
+      <button type="submit" class="submit" id="submitBtn">Get my link</button>
+      <div class="making" id="making" aria-live="polite"></div>
+      <div class="err" id="err-save"></div>
+    </form>
+
+    <!-- Surface B: share state -->
+    <div class="share" id="share">
+      <div class="share-card">
+        <h2>Your card is ready.</h2>
+        <p>Send this link to their phone. They just tap it.</p>
+        <div class="link-row">
+          <input type="text" id="shareLink" readonly />
+          <button type="button" class="copy" id="copyBtn">Copy link</button>
+        </div>
+        <span class="again" id="makeAnother">Make another</span>
+      </div>
+    </div>
+
+  </div>
+
+<script type="module">
+  import { saveCard } from "./shared/supabase.js";
+
+  // The maker carries ?ref=<card_id>&g=<gen> from a card someone received, for
+  // generation attribution. Read but do not require them.
+  const params = new URLSearchParams(location.search);
+  const refCardId = params.get("ref") || null;
+  const generation = parseInt(params.get("g") || "0", 10) || 0;
+
+  const form = document.getElementById("makerForm");
+  const photoInput = document.getElementById("photo");
+  const dropzone = document.getElementById("dropzone");
+  const thumbWrap = document.getElementById("thumbWrap");
+  const thumbImg = document.getElementById("thumbImg");
+  const removePhoto = document.getElementById("removePhoto");
+  const submitBtn = document.getElementById("submitBtn");
+  const making = document.getElementById("making");
+  const share = document.getElementById("share");
+  const shareLink = document.getElementById("shareLink");
+  const copyBtn = document.getElementById("copyBtn");
+  const makeAnother = document.getElementById("makeAnother");
+
+  let photoBlob = null;
+  let occasion = "justBecause";
+  let effect = "hearts";
+
+  // Single select chip groups.
+  function wireChips(groupId, setter) {
+    const group = document.getElementById(groupId);
+    group.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      group.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
+      chip.setAttribute("aria-pressed", "true");
+      setter(chip.getAttribute("data-value"));
+    });
+  }
+  wireChips("occasionChips", (v) => { occasion = v; });
+  wireChips("effectChips", (v) => { effect = v; });
+
+  // Photo select: show a taped polaroid style thumbnail. Raw blob for the
+  // skeleton; downscale and HEIC handling land in Plan 03.
+  photoInput.addEventListener("change", () => {
+    const file = photoInput.files && photoInput.files[0];
+    if (!file) return;
+    photoBlob = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      thumbImg.src = reader.result;
+      thumbWrap.style.display = "flex";
+      dropzone.style.display = "none";
+    };
+    reader.readAsDataURL(file);
+  });
+  removePhoto.addEventListener("click", () => {
+    photoBlob = null;
+    photoInput.value = "";
+    thumbWrap.style.display = "none";
+    dropzone.style.display = "flex";
+  });
+
+  function setErr(id, msg) { document.getElementById(id).textContent = msg || ""; }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setErr("err-name", ""); setErr("err-message", ""); setErr("err-save", "");
+
+    const recipientName = document.getElementById("recipientName").value.trim();
+    const message = document.getElementById("message").value.trim();
+    const signoff = document.getElementById("signoff").value.trim();
+    const consent = document.getElementById("consent").checked;
+
+    let ok = true;
+    if (!recipientName) { setErr("err-name", "Add their first name"); ok = false; }
+    if (!message) { setErr("err-message", "Write a note first"); ok = false; }
+    if (!consent) { setErr("err-save", "Please confirm the checkbox to continue."); ok = false; }
+    if (!ok) return;
+
+    submitBtn.disabled = true;
+    making.textContent = "Making your link...";
+
+    const result = await saveCard({
+      recipientName, message, signoff,
+      occasion, effect, photoBlob,
+      refCardId, generation,
+    });
+
+    submitBtn.disabled = false;
+    making.textContent = "";
+
+    if (!result || result.error) {
+      setErr("err-save", "We couldn't make your link just now. Give it another try.");
+      return;
+    }
+
+    shareLink.value = result.url;
+    form.style.display = "none";
+    share.style.display = "block";
+  });
+
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink.value);
+    } catch (e) {
+      shareLink.select();
+      document.execCommand && document.execCommand("copy");
+    }
+    const original = copyBtn.textContent;
+    copyBtn.textContent = "Copied";
+    copyBtn.style.color = "var(--rose)";
+    setTimeout(() => { copyBtn.textContent = original; copyBtn.style.color = ""; }, 1500);
+  });
+
+  makeAnother.addEventListener("click", () => { location.href = location.pathname; });
+</script>
+</body>
+</html>
