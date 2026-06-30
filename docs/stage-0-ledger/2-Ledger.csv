@@ -1,0 +1,2 @@
+"card_id","gen","channel","arm","tie_strength","sender","recipient","relationship","cohort","occasion","sent_at","engaged","cta_clicked","requested_own","request_card_id","recipient_opened","verified_propagation","who_sent_you","gift_interest","library_interest","notes"
+"EXAMPLE_delete_me","0","warm","unprimed","strong","Alex (you)","Mom","parent","college","birthday","2026-07-01","Y","Y","N","","Y (new device)","N","","N","Y","Example row - DELETE this and all test cards before card #1"
