@@ -913,10 +913,14 @@
 
 <script type="module">
   // The recipient open is sacred. The engine IIFE above already painted the
-  // closed cover synchronously. ONLY NOW do we fetch the card row, so the fetch
-  // never blocks the first frame (research anti-pattern).
+  // closed cover synchronously. ONLY NOW do we fetch the card row and wire the
+  // analytics, so neither ever blocks the first frame (research anti-pattern).
   import { getCardByToken } from "./shared/supabase.js";
   import { applyCardToEngine } from "./shared/engine-bridge.js";
+  import {
+    initAnalytics, track, markEngagedOnBottom,
+    startDwellTimer, pauseDwell, resumeDwell,
+  } from "./shared/analytics.js";
 
   // Read the token from a clean /c/<token>/ path, falling back to ?c=<token>.
   function readToken() {
@@ -925,19 +929,94 @@
     return new URLSearchParams(location.search).get("c");
   }
 
+  function readGeneration() {
+    var g = parseInt(new URLSearchParams(location.search).get("g") || "0", 10);
+    return Number.isFinite(g) ? g : 0;
+  }
+
+  function prefersReducedMotion() {
+    return !!(window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
   // Thread ?ref and ?g onto the CTA so the next maker visit attributes the
   // generation. We do this client side; it does not block the open.
-  function wireCta(token) {
+  function wireCta(token, generation) {
     var link = document.getElementById("ctaLink");
     if (!link || !token) return;
-    var params = new URLSearchParams(location.search);
-    var gen = parseInt(params.get("g") || "0", 10) || 0;
-    link.href = "/maker.html?ref=" + encodeURIComponent(token) + "&g=" + (gen + 1);
+    link.href = "/maker.html?ref=" + encodeURIComponent(token) + "&g=" + (generation + 1);
+  }
+
+  // Fire cta_clicked on tap, then let the link navigate normally. Fire and forget
+  // so analytics never delays the hop into the maker (D-02 / VAL-02).
+  function wireCtaAnalytics() {
+    var link = document.getElementById("ctaLink");
+    if (!link) return;
+    link.addEventListener("click", function () {
+      track("cta_clicked");
+    });
+  }
+
+  // The engaged signals (D-02). card_engaged is gated, deduped, and reduced
+  // motion excluded inside shared/analytics.js; here we only forward the two real
+  // engine hooks into it.
+  //
+  // 1) Note bottom: the engine toggles the .read class on .face.inside when the
+  //    scroller reaches the bottom (atBottom(), index lines 589-600). We watch for
+  //    that class with a MutationObserver and forward it; the module dedupes.
+  // 2) Dwell: startDwellTimer() begins counting VISIBLE time on open; we forward
+  //    visibilitychange to pause/resume so backgrounding the tab pauses the clock
+  //    (index lines 910-912). NOT the old 1500ms timer (that stays only for
+  //    revealing the CTA).
+  function wireEngagement() {
+    var inside = document.querySelector(".face.inside");
+    if (inside && typeof MutationObserver !== "undefined") {
+      var obs = new MutationObserver(function () {
+        if (inside.classList.contains("read")) markEngagedOnBottom();
+      });
+      obs.observe(inside, { attributes: true, attributeFilter: ["class"] });
+      // In case .read is already present (very short notes can be at bottom on open).
+      if (inside.classList.contains("read")) markEngagedOnBottom();
+    }
+
+    // Start the dwell fallback on the real open. We hook the same trigger the
+    // engine uses (a click or Enter/Space on the card), once.
+    var card = document.getElementById("card");
+    if (card) {
+      var armed = false;
+      function arm() {
+        if (armed) return;
+        armed = true;
+        startDwellTimer();
+      }
+      card.addEventListener("click", arm);
+      card.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") arm();
+      });
+    }
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) pauseDwell();
+      else resumeDwell();
+    });
   }
 
   async function load() {
     var token = readToken();
-    wireCta(token);
+    var generation = readGeneration();
+    var reduceMotion = prefersReducedMotion();
+
+    // Init analytics first (fire and forget; it never blocks and never throws),
+    // then wire the CTA + the engaged hooks. card_opened fires here: opening the
+    // page IS the open for the recipient (the cover is already painted and the
+    // tap-to-flip is the same gesture). We fire once on load.
+    initAnalytics({ cardId: token || "unknown", generation: generation, reduceMotion: reduceMotion });
+    track("card_opened");
+
+    wireCta(token, generation);
+    wireCtaAnalytics();
+    wireEngagement();
+
     if (!token) return; // no token: the cover still shows; nothing to fill.
 
     var row = await getCardByToken(token);

@@ -222,12 +222,20 @@
 
 <script type="module">
   import { saveCard } from "./shared/supabase.js";
+  import { initAnalytics, track } from "./shared/analytics.js";
 
   // The maker carries ?ref=<card_id>&g=<gen> from a card someone received, for
   // generation attribution. Read but do not require them.
   const params = new URLSearchParams(location.search);
   const refCardId = params.get("ref") || null;
   const generation = parseInt(params.get("g") || "0", 10) || 0;
+
+  // Cookieless analytics for the maker side of the loop. The card_id we register
+  // is the spawning card (the ref), so a maker_opened arriving from a real card
+  // ties back to the card that recruited this sender. Fire and forget; a missing
+  // PostHog key degrades to no analytics, never a broken form.
+  initAnalytics({ cardId: refCardId || "direct", generation: generation, reduceMotion: false });
+  track("maker_opened", { referred: !!refCardId });
 
   const form = document.getElementById("makerForm");
   const photoInput = document.getElementById("photo");
@@ -314,6 +322,19 @@
       setErr("err-save", "We couldn't make your link just now. Give it another try.");
       return;
     }
+
+    // The maker side create event. This is the node that, when it came from a
+    // tracked ref to a gen >= 1 card, is a candidate propagation event (the
+    // ledger verifies it; PostHog corroborates). occasion/effect are descriptive.
+    track("card_created", {
+      token: result.token,
+      generation: generation,
+      ref_card_id: refCardId,
+      referred: !!refCardId,
+      occasion: occasion,
+      effect: effect,
+      has_photo: !!photoBlob,
+    });
 
     shareLink.value = result.url;
     form.style.display = "none";
