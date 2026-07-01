@@ -771,7 +771,57 @@
   }
 
   var emojiBalls = [];
-  var EMOJIS = ["🥰", "🫰", "❤️", "🫶", "🖖", "💌"];
+  // Default falling set (love). Senders can override it in the maker; the bridge
+  // pushes their set in through window.__applyEmojis before the card opens.
+  var EMOJIS = ["🥰", "❤️", "🫶", "😍", "💕", "😘"];
+
+  // Apple-style emoji artwork, so every recipient (Android/Windows too) sees Apple
+  // emojis, not their platform's set. Images come from emoji-datasource-apple on
+  // jsDelivr (CORS-open, so the canvas is never tainted). Any emoji whose image
+  // fails to load falls back to the native font glyph.
+  var APPLE_BASE = "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/";
+  var emojiImgs = {}; // char -> { img, ready, failed }
+
+  // The emoji-datasource filename is the hyphen-joined lowercase codepoints. Some
+  // files keep the FE0F variation selector (and ZWJ) and some drop them, so try
+  // the full form first, then a stripped form.
+  function emojiCandidates(ch) {
+    var cps = [];
+    for (var i = 0; i < ch.length;) {
+      var cp = ch.codePointAt(i);
+      cps.push(cp.toString(16));
+      i += cp > 0xffff ? 2 : 1;
+    }
+    var full = cps.join("-");
+    var noVs = cps.filter(function (c) { return c !== "fe0f" && c !== "200d"; }).join("-");
+    return noVs && noVs !== full ? [full, noVs] : [full];
+  }
+
+  function preloadEmojiImages(list) {
+    list.forEach(function (ch) {
+      if (emojiImgs[ch]) return;
+      var rec = { img: null, ready: false, failed: false };
+      emojiImgs[ch] = rec;
+      var cands = emojiCandidates(ch);
+      var idx = 0;
+      var im = new Image();
+      im.crossOrigin = "anonymous";
+      im.onload = function () { rec.img = im; rec.ready = true; };
+      im.onerror = function () {
+        idx++;
+        if (idx < cands.length) im.src = APPLE_BASE + cands[idx] + ".png";
+        else rec.failed = true;
+      };
+      im.src = APPLE_BASE + cands[0] + ".png";
+    });
+  }
+
+  // Called by the bridge once the card row arrives (like __applyEffectConfig).
+  window.__applyEmojis = function (list) {
+    if (Array.isArray(list) && list.length) EMOJIS = list.slice(0, 8);
+    preloadEmojiImages(EMOJIS);
+  };
+  preloadEmojiImages(EMOJIS); // warm the default set immediately
 
   function floorFor(b) { return H - 8 - b.cR; }
 
@@ -874,8 +924,14 @@
       ctx.save();
       ctx.translate(b.x, b.y);
       ctx.rotate(b.rot);
-      ctx.font = b.size + "px 'Outfit', sans-serif";
-      ctx.fillText(b.char, 0, 1);
+      var rec = emojiImgs[b.char];
+      if (rec && rec.ready && rec.img) {
+        var s = b.size * 1.18;
+        ctx.drawImage(rec.img, -s / 2, -s / 2, s, s);
+      } else {
+        ctx.font = b.size + "px 'Outfit', sans-serif";
+        ctx.fillText(b.char, 0, 1);
+      }
       ctx.restore();
     }
   }

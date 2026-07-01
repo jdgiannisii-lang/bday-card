@@ -137,4 +137,16 @@ export function applyCardToEngine(row) {
   } catch (e) {
     // No window (e.g. structural import under Node): nothing to set.
   }
+
+  // Falling emojis: the sender's chosen set (content.emojis), else the engine
+  // default. window.__applyEmojis swaps the set and preloads the Apple images.
+  try {
+    const emojis = Array.isArray(content.emojis) ? content.emojis.filter(Boolean) : [];
+    if (typeof window !== "undefined") {
+      window.CARD_EMOJIS = emojis;
+      if (emojis.length && window.__applyEmojis) window.__applyEmojis(emojis);
+    }
+  } catch (e) {
+    // No window under Node structural import: nothing to set.
+  }
 }

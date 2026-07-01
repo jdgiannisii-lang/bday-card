@@ -222,6 +222,18 @@
         </div>
       </div>
 
+      <div class="field">
+        <label class="lbl">Falling emojis</label>
+        <div class="chips" id="emojiChips" role="group">
+          <button type="button" class="chip" data-set="love" aria-pressed="true">🥰 Love</button>
+          <button type="button" class="chip" data-set="birthday" aria-pressed="false">🎉 Birthday</button>
+          <button type="button" class="chip" data-set="cute" aria-pressed="false">🥺 Cute</button>
+          <button type="button" class="chip" data-set="hype" aria-pressed="false">🔥 Hype</button>
+        </div>
+        <input type="text" id="emojiCustom" name="emojiCustom" maxlength="40" autocomplete="off" placeholder="Or type your own: 🌟🐶🍕" style="margin-top:10px" />
+        <div class="hint">Up to 8. They rain down when the card opens (shown as Apple emojis).</div>
+      </div>
+
       <div class="field consent">
         <input type="checkbox" id="consent" />
         <label for="consent">I have permission to use this photo, and I understand this is an early experiment.</label>
@@ -322,6 +334,46 @@
   wireChips("occasionChips", (v) => { occasion = v; });
   wireChips("effectChips", (v) => { effect = v; });
 
+  // Falling-emoji picker: themed presets plus a free-type field. Default = love.
+  const EMOJI_SETS = {
+    love: ["🥰", "❤️", "🫶", "😍", "💕", "😘"],
+    birthday: ["🎉", "🥳", "🎈", "🎁", "✨", "🍰"],
+    cute: ["🥺", "🥰", "🐻", "🌸", "💖", "✨"],
+    hype: ["🔥", "🙌", "💯", "🤩", "⚡", "🎊"],
+  };
+  let emojis = EMOJI_SETS.love.slice();
+  const emojiChips = document.getElementById("emojiChips");
+  const emojiCustom = document.getElementById("emojiCustom");
+
+  emojiChips.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    emojiChips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
+    chip.setAttribute("aria-pressed", "true");
+    emojis = (EMOJI_SETS[chip.getAttribute("data-set")] || EMOJI_SETS.love).slice();
+    emojiCustom.value = ""; // a preset overrides any custom text
+  });
+
+  // Custom emojis: pull the pictographic characters the sender typed (deduped, max
+  // 8). Any input deselects the presets; clearing it falls back to the love default.
+  emojiCustom.addEventListener("input", () => {
+    const picked = emojiCustom.value.match(/\p{Extended_Pictographic}/gu) || [];
+    const uniq = [];
+    picked.forEach((c) => { if (uniq.indexOf(c) === -1) uniq.push(c); });
+    if (uniq.length) {
+      emojis = uniq.slice(0, 8);
+      emojiChips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
+    } else {
+      const active = emojiChips.querySelector('.chip[aria-pressed="true"]');
+      if (active) {
+        emojis = (EMOJI_SETS[active.getAttribute("data-set")] || EMOJI_SETS.love).slice();
+      } else {
+        emojis = EMOJI_SETS.love.slice();
+        emojiChips.querySelector('.chip[data-set="love"]').setAttribute("aria-pressed", "true");
+      }
+    }
+  });
+
   function setErr(id, msg) { document.getElementById(id).textContent = msg || ""; }
 
   // Map a PhotoError code to the verbatim UI-SPEC copy. A decode failure is the
@@ -418,7 +470,7 @@
 
     const result = await saveCard({
       recipientName, message, signoff,
-      occasion, effect,
+      occasion, effect, emojis,
       photoBlobs: photoBlobs.map((p) => p.blob),
       refCardId, generation,
     });
@@ -444,6 +496,7 @@
       effect: effect,
       has_photo: photoBlobs.length > 0,
       photo_count: photoBlobs.length,
+      emoji_count: emojis.length,
       // Soft propagation evidence for the ledger (Stage 0 spec 5.2). Self-report
       // only; the ledger verifies real edges, PostHog corroborates.
       who_sent_you: whoSentYou || null,

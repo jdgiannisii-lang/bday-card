@@ -101,6 +101,7 @@ export async function saveCard(formData) {
       coverTitle: data.coverTitle || "",
       caption: data.caption || "",
       photos: photo_urls,
+      emojis: Array.isArray(data.emojis) ? data.emojis.filter(Boolean).slice(0, 8) : [],
     };
 
     const row = {
