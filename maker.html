@@ -115,6 +115,14 @@
   }
   .chip[aria-pressed="true"] { border-color: var(--rose); color: var(--rose-deep); }
 
+  /* Three individual falling-emoji slots. Each holds one emoji; tap to change it. */
+  .emoji-slots { display: flex; gap: 12px; margin-top: 12px; }
+  .emoji-slot {
+    width: 56px; height: 56px; padding: 0; text-align: center; font-size: 26px; line-height: 1;
+    border-radius: 12px; border: 1.5px solid var(--paper-edge); background: var(--paper); color: var(--ink);
+    caret-color: var(--rose);
+  }
+
   .consent { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: var(--ink-soft); line-height: 1.4; }
   .consent input { margin-top: 3px; }
 
@@ -230,8 +238,12 @@
           <button type="button" class="chip" data-set="cute" aria-pressed="false">🥺 Cute</button>
           <button type="button" class="chip" data-set="hype" aria-pressed="false">🔥 Hype</button>
         </div>
-        <input type="text" id="emojiCustom" name="emojiCustom" maxlength="40" autocomplete="off" placeholder="Or type your own: 🌟🐶🍕" style="margin-top:10px" />
-        <div class="hint">Up to 8. They rain down when the card opens (shown as Apple emojis).</div>
+        <div class="emoji-slots" id="emojiSlots">
+          <input type="text" class="emoji-slot" aria-label="Falling emoji 1" autocomplete="off" />
+          <input type="text" class="emoji-slot" aria-label="Falling emoji 2" autocomplete="off" />
+          <input type="text" class="emoji-slot" aria-label="Falling emoji 3" autocomplete="off" />
+        </div>
+        <div class="hint">Tap a preset, or tap a tile and pick your own. These rain down (as Apple emojis).</div>
       </div>
 
       <div class="field consent">
@@ -334,44 +346,43 @@
   wireChips("occasionChips", (v) => { occasion = v; });
   wireChips("effectChips", (v) => { effect = v; });
 
-  // Falling-emoji picker: themed presets plus a free-type field. Default = love.
+  // Falling-emoji picker: three individually editable slots, with themed presets
+  // that fill all three at once. Default = love. Each slot holds one emoji.
   const EMOJI_SETS = {
-    love: ["🥰", "❤️", "🫶", "😍", "💕", "😘"],
-    birthday: ["🎉", "🥳", "🎈", "🎁", "✨", "🍰"],
-    cute: ["🥺", "🥰", "🐻", "🌸", "💖", "✨"],
-    hype: ["🔥", "🙌", "💯", "🤩", "⚡", "🎊"],
+    love: ["🥰", "❤️", "😍"],
+    birthday: ["🎉", "🥳", "🎈"],
+    cute: ["🥺", "🐻", "🌸"],
+    hype: ["🔥", "🙌", "🤩"],
   };
-  let emojis = EMOJI_SETS.love.slice();
   const emojiChips = document.getElementById("emojiChips");
-  const emojiCustom = document.getElementById("emojiCustom");
+  const slotEls = Array.from(document.querySelectorAll(".emoji-slot"));
 
+  // The chosen set = the non-empty slots, in order.
+  function currentEmojis() {
+    return slotEls.map((s) => s.value.trim()).filter(Boolean);
+  }
+  function fillSlots(arr) {
+    slotEls.forEach((s, i) => { s.value = arr[i] || ""; });
+  }
+  fillSlots(EMOJI_SETS.love); // default
+
+  // Preset click fills all three slots and marks that preset active.
   emojiChips.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
     if (!chip) return;
     emojiChips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
     chip.setAttribute("aria-pressed", "true");
-    emojis = (EMOJI_SETS[chip.getAttribute("data-set")] || EMOJI_SETS.love).slice();
-    emojiCustom.value = ""; // a preset overrides any custom text
+    fillSlots(EMOJI_SETS[chip.getAttribute("data-set")] || EMOJI_SETS.love);
   });
 
-  // Custom emojis: pull the pictographic characters the sender typed (deduped, max
-  // 8). Any input deselects the presets; clearing it falls back to the love default.
-  emojiCustom.addEventListener("input", () => {
-    const picked = emojiCustom.value.match(/\p{Extended_Pictographic}/gu) || [];
-    const uniq = [];
-    picked.forEach((c) => { if (uniq.indexOf(c) === -1) uniq.push(c); });
-    if (uniq.length) {
-      emojis = uniq.slice(0, 8);
+  // Each slot keeps only the last emoji typed (so it always holds one), and a
+  // manual edit means the set is no longer a named preset, so deselect the chips.
+  slotEls.forEach((s) => {
+    s.addEventListener("input", () => {
+      const picked = s.value.match(/\p{Extended_Pictographic}/gu);
+      s.value = picked && picked.length ? picked[picked.length - 1] : "";
       emojiChips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
-    } else {
-      const active = emojiChips.querySelector('.chip[aria-pressed="true"]');
-      if (active) {
-        emojis = (EMOJI_SETS[active.getAttribute("data-set")] || EMOJI_SETS.love).slice();
-      } else {
-        emojis = EMOJI_SETS.love.slice();
-        emojiChips.querySelector('.chip[data-set="love"]').setAttribute("aria-pressed", "true");
-      }
-    }
+    });
   });
 
   function setErr(id, msg) { document.getElementById(id).textContent = msg || ""; }
@@ -457,6 +468,7 @@
     const signoff = document.getElementById("signoff").value.trim();
     const whoSentYou = document.getElementById("whoSentYou").value.trim();
     const consent = consentBox.checked;
+    const chosenEmojis = currentEmojis();
 
     let ok = true;
     if (!recipientName) { setErr("err-name", "Add their first name"); ok = false; }
@@ -470,7 +482,7 @@
 
     const result = await saveCard({
       recipientName, message, signoff,
-      occasion, effect, emojis,
+      occasion, effect, emojis: chosenEmojis,
       photoBlobs: photoBlobs.map((p) => p.blob),
       refCardId, generation,
     });
@@ -496,7 +508,7 @@
       effect: effect,
       has_photo: photoBlobs.length > 0,
       photo_count: photoBlobs.length,
-      emoji_count: emojis.length,
+      emoji_count: chosenEmojis.length,
       // Soft propagation evidence for the ledger (Stage 0 spec 5.2). Self-report
       // only; the ledger verifies real edges, PostHog corroborates.
       who_sent_you: whoSentYou || null,
