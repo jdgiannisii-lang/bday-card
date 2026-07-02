@@ -24,7 +24,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** A beautiful card that plays instantly in any browser with zero friction, where every recipient can become a sender in the same session.
-**Current focus:** Phase 1 — Validate the Loop (Stage 0 concierge GATE)
+**Current focus:** Building the product directly (Stage 0 gate retired by founder decision, 2026-07-02)
 
 ## Current Position
 
@@ -90,7 +90,7 @@ None yet.
 
 [Issues that affect future work]
 
-- Phase 1 GATE: do not build Phase 2+ until Stage 0 returns CONTINUE (≥2 independent verified organic-propagation events). A KILL means change the audience or loop, not build Stage 1.
+- Phase 1 gate RETIRED (founder decision, 2026-07-02): Phases 2+ build directly; validation metrics remain instrumented and informative, but no longer block building. Phase 4's legal ship-blockers (moderation, CSAM reporting) still apply before public traffic.
 - Engine port (Phase 2) must fix four known `index.html` issues from .planning/codebase/CONCERNS.md: blind 1500ms "finish" timer, `Math.random()` non-determinism, render-blocking Google Fonts, reduced-motion suppression.
 
 ## Deferred Items

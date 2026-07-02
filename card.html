@@ -1518,7 +1518,48 @@
     if (Number.isFinite(row.generation)) wireCta(token, row.generation);
   }
 
-  load();
+  // Preview mode: the maker's "See it first" overlay embeds this page as
+  // card.html?preview=1 and posts the in-progress card over postMessage.
+  // Nothing is fetched, nothing is tracked, and no row exists. Photos arrive
+  // as same-origin blob: URLs (the maker's object URLs), so only that prefix
+  // is allowed. The CTA is hidden: it points back at the maker the sender is
+  // already in.
+  async function preview() {
+    // Windows renders a stray scrollbar inside the embedded frame otherwise.
+    document.documentElement.style.overflow = "hidden";
+    var cta = document.getElementById("cta");
+    if (cta) cta.style.display = "none";
+    var applyCardToEngine = null;
+    try {
+      var bridgeMod = await import("./shared/engine-bridge.js");
+      applyCardToEngine = bridgeMod.applyCardToEngine;
+    } catch (err) {
+      return; // no bridge, no preview; the cover still shows
+    }
+    var allowed = ["blob:" + location.origin];
+    window.addEventListener("message", function (e) {
+      if (e.origin !== location.origin) return;
+      var d = e.data;
+      if (!d || d.type !== "cardPreview" || !d.row) return;
+      try {
+        applyCardToEngine(d.row, { photoPrefixes: allowed });
+        if (window.__applyEffectConfig) window.__applyEffectConfig();
+      } catch (err) { /* a malformed draft never breaks the frame */ }
+    });
+    // Escape pressed while focus is inside this frame should still close the
+    // maker's overlay; keydown does not cross documents, so forward it.
+    window.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "cardPreviewClose" }, location.origin);
+      }
+    });
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "cardPreviewReady" }, location.origin);
+    }
+  }
+
+  if (new URLSearchParams(location.search).has("preview")) preview();
+  else load();
 </script>
 
 </body>

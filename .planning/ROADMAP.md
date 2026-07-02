@@ -50,7 +50,8 @@ Plans:
 
 **UI hint**: yes
 
-> GATE: This phase carries a pre-committed kill/continue decision. Phases 2-4 are conditional
+> GATE RETIRED (founder decision, 2026-07-02): building proceeds without waiting on the kill/continue read.
+> Original note kept for history: This phase carries a pre-committed kill/continue decision. Phases 2-4 are conditional
 > on a CONTINUE (Stage 0 clears its threshold). A KILL means change the audience or the loop,
 > not build Stage 1.
 

@@ -1,3 +1,7 @@
+> **Founder decision (2026-07-02): gate retired.** The pre-committed
+> kill/continue mechanism below is no longer binding; the product builds
+> directly. Kept for history and as a reference for reading the metrics.
+
 # Stage 0 Decision Ledger (pre-committed)
 
 This is the pre-committed decision instrument for the Stage 0 concierge test

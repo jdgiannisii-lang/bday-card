@@ -333,6 +333,35 @@
 
   /* Caption confirming a low-stakes photo removal (UI-SPEC). */
   .photo-removed { font-family: 'Caveat', cursive; font-size: 15px; color: var(--ink-soft); margin-top: 8px; text-align: center; min-height: 0; }
+
+  /* "See it first": the real card view (card.html?preview=1) in an overlay,
+     fed the in-progress card over postMessage. No row is created. */
+  .preview-btn {
+    display: block; width: 100%; min-height: 46px; margin: 0 0 10px;
+    border-radius: 999px; border: 1.5px solid var(--paper-edge);
+    background: var(--paper); color: var(--rose-deep);
+    font: inherit; font-size: 16px; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .preview-btn:hover { border-color: var(--rose); }
+  .preview-overlay {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+    background: rgba(70,54,45,.5);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    padding: 16px;
+  }
+  .preview-overlay.show { display: flex; }
+  .preview-overlay iframe {
+    width: min(400px, 94vw); height: min(780px, 82vh);
+    border: 0; border-radius: 20px; background: var(--paper);
+    box-shadow: 0 30px 80px rgba(40,26,18,.45);
+  }
+  .preview-close {
+    min-height: 40px; padding: 0 18px; border-radius: 999px;
+    border: 1.5px solid rgba(255,255,255,.5); background: rgba(248,241,227,.94);
+    color: var(--ink); font: inherit; font-size: 15px; cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -454,6 +483,7 @@
         <label for="consent">I have permission to share any photos I added, and I understand this is an early experiment.</label>
       </div>
 
+      <button type="button" class="preview-btn" id="previewBtn">See it first</button>
       <button type="submit" class="submit" id="submitBtn" disabled>Get my link</button>
       <div class="making" id="making" aria-live="polite"></div>
       <div class="err" id="err-save"></div>
@@ -477,6 +507,10 @@
       </div>
     </div>
 
+  </div>
+
+  <div class="preview-overlay" id="previewOverlay" role="dialog" aria-modal="true" aria-label="Card preview">
+    <button type="button" class="preview-close" id="previewClose">Close preview</button>
   </div>
 
 <script type="module">
@@ -830,6 +864,67 @@
   // Keep ?ref and ?g: a referred sender's second card is still part of the same
   // chain, and reloading the bare path would misattribute it as direct, gen 0.
   makeAnother.addEventListener("click", () => { location.href = location.pathname + location.search; });
+
+  // "See it first": embed the REAL card view (card.html?preview=1) and feed it
+  // the in-progress card over postMessage, so the sender watches their actual
+  // card play before minting a link. Same-origin only; photos travel as the
+  // maker's blob: object URLs; nothing is saved and nothing is tracked in the
+  // frame (the maker fires one preview_opened event for the funnel).
+  const previewBtn = document.getElementById("previewBtn");
+  const previewOverlay = document.getElementById("previewOverlay");
+  const previewClose = document.getElementById("previewClose");
+  let previewFrame = null;
+  let previewReady = false;
+
+  function previewRow() {
+    const ageRaw = parseInt(document.getElementById("age").value, 10);
+    return {
+      token: "preview",
+      content: {
+        recipientName: document.getElementById("recipientName").value.trim(),
+        message: document.getElementById("message").value.trim(),
+        signoff: document.getElementById("signoff").value.trim(),
+        photos: photoBlobs.map((p) => p.url),
+        emojis: currentEmojis(),
+        theme: theme,
+        age: occasion === "birthday" && Number.isInteger(ageRaw) && ageRaw >= 1 && ageRaw <= 120 ? ageRaw : null,
+      },
+      photo_url: null,
+      occasion, effect, generation: 0,
+    };
+  }
+  function sendPreview() {
+    if (previewFrame && previewReady && previewFrame.contentWindow) {
+      previewFrame.contentWindow.postMessage({ type: "cardPreview", row: previewRow() }, location.origin);
+    }
+  }
+  window.addEventListener("message", (e) => {
+    if (e.origin !== location.origin) return;
+    if (e.data && e.data.type === "cardPreviewReady") { previewReady = true; sendPreview(); }
+    if (e.data && e.data.type === "cardPreviewClose") closePreview();
+  });
+  previewBtn.addEventListener("click", () => {
+    if (!previewFrame) {
+      previewFrame = document.createElement("iframe");
+      previewFrame.src = "card.html?preview=1";
+      previewFrame.title = "Card preview";
+      previewOverlay.appendChild(previewFrame);
+    } else {
+      sendPreview(); // already loaded: refresh with the latest draft
+    }
+    previewOverlay.classList.add("show");
+    previewClose.focus();
+    track("preview_opened", { theme: theme, effect: effect, occasion: occasion });
+  });
+  function closePreview() {
+    previewOverlay.classList.remove("show");
+    previewBtn.focus();
+  }
+  previewClose.addEventListener("click", closePreview);
+  previewOverlay.addEventListener("click", (e) => { if (e.target === previewOverlay) closePreview(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && previewOverlay.classList.contains("show")) closePreview();
+  });
 </script>
 </body>
 </html>

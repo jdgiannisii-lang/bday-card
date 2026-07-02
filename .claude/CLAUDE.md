@@ -27,7 +27,7 @@ same session (the viral loop). If everything else fails, that must work.
 - **Budget**: Marginal cost per card ≈ $0 (deterministic canvas, free sends fuel the loop). Real pre-public infra floor ≈ $50–80/mo (Supabase Pro backups + Resend Pro + moderation), not $0.
 - **Content rule**: ZERO em-dashes in card content (HANDOFF.md - the #1 AI tell; validated by grep). Hold the taste line: handcrafted, never cheesy.
 - **Legal**: User-uploaded photos + anonymous sends → image moderation + CSAM reporting (18 USC 2258A) are mandatory before public traffic, not optional.
-- **Sequencing**: Each stage is a gate, not a date. Don't build Stage 1 until Stage 0's K-factor clears a pre-committed threshold.
+- **Sequencing**: Gate retired (founder decision, 2026-07-02). Build the roadmap phases directly; validation data is welcome but no longer blocks building.
 
 <!-- GSD:project-end -->
 
@@ -430,17 +430,11 @@ No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skill
 
 <!-- GSD:workflow-start source:GSD defaults -->
 
-## GSD Workflow Enforcement
+## Workflow
 
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
-
-Use these entry points:
-
-- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd-debug` for investigation and bug fixing
-- `/gsd-execute-phase` for planned phase work
-
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
+Direct edits are fine. Build, verify with Playwright, commit atomically. The
+GSD approval-gate workflow was retired by founder decision on 2026-07-02;
+GSD commands remain available as optional tools, not required entry points.
 <!-- GSD:workflow-end -->
 
 <!-- GSD:profile-start -->
