@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Effect preview (local only)</title>
+<!--
+  LOCAL-ONLY preview harness. NOT committed / not deployed. It embeds the real
+  card.html engine in an iframe and drives it (window.__applyEffectConfig,
+  __openStrip) so you can flip through every effect and toggle the photo-booth
+  strip without creating any Supabase rows. Same-origin (localhost) lets the
+  parent reach into the iframe.
+-->
+<style>
+  :root {
+    --paper:#f8f1e3; --ink:#46362d; --ink-soft:#7a685b; --rose:#c25470; --rose-deep:#9e3a55;
+    --paper-warm:#f3e8d4; --paper-edge:#e7d8bf;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; font-family:'Outfit',system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    background: radial-gradient(1100px 760px at 50% 0%, #fbf4e8 0%, #f0e0cf 60%, #e8d4c0 100%);
+    display:flex; flex-direction:column; align-items:center; padding:18px 12px 40px;
+  }
+  h1 { font-size:15px; letter-spacing:.06em; margin:0 0 2px; font-weight:600; }
+  .sub { font-size:12.5px; color:var(--ink-soft); margin:0 0 14px; text-align:center; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:520px; margin-bottom:10px; }
+  .btn {
+    min-height:38px; padding:0 15px; border-radius:999px; border:1.5px solid var(--paper-edge);
+    background:var(--paper); color:var(--ink-soft); font:inherit; font-size:14px; cursor:pointer;
+  }
+  .btn[aria-pressed="true"] { border-color:var(--rose); color:var(--rose-deep); background:#fff; font-weight:600; }
+  .btn.alt { border-style:dashed; }
+  .row2 { display:flex; gap:8px; justify-content:center; margin-bottom:16px; }
+  .frame {
+    width:390px; max-width:96vw; height:760px; max-height:78vh;
+    border-radius:26px; overflow:hidden; border:10px solid #2c241e;
+    box-shadow:0 24px 60px rgba(70,54,45,.4); background:#000;
+  }
+  iframe { width:100%; height:100%; border:0; display:block; }
+  .hint { font-size:12px; color:var(--ink-soft); margin-top:12px; text-align:center; max-width:420px; }
+  code { background:var(--paper-warm); padding:1px 5px; border-radius:5px; }
+</style>
+</head>
+<body>
+  <h1>Card effect preview</h1>
+  <p class="sub">Local only. Tap an effect to replay it. No cards are saved.</p>
+
+  <div class="bar" id="fxBar">
+    <button class="btn" data-fx="hearts" aria-pressed="true">Hearts</button>
+    <button class="btn" data-fx="confetti">Confetti</button>
+    <button class="btn" data-fx="petals">Petals</button>
+    <button class="btn" data-fx="sparkles">Sparkles</button>
+    <button class="btn" data-fx="balloons">Balloons</button>
+  </div>
+  <div class="row2">
+    <button class="btn alt" id="stripToggle" aria-pressed="false">Photo-booth strip: off</button>
+    <button class="btn alt" id="replayBtn">Replay</button>
+  </div>
+  <div class="bar" id="emojiBar" style="margin-bottom:16px">
+    <span style="align-self:center;font-size:12.5px;color:var(--ink-soft)">Falling emojis:</span>
+    <button class="btn" data-em="love" aria-pressed="true">🥰 Love</button>
+    <button class="btn" data-em="birthday">🎉 Birthday</button>
+    <button class="btn" data-em="cute">🥺 Cute</button>
+    <button class="btn" data-em="hype">🔥 Hype</button>
+  </div>
+
+  <div class="frame">
+    <iframe id="card" src="card.html" title="Card preview"></iframe>
+  </div>
+
+  <p class="hint">New this session: <b>Sparkles</b>, <b>Balloons</b>, and the <b>photo-booth strip</b> (toggle it on, then pick an effect). Strip cells here are placeholders so no photos upload.</p>
+
+<script>
+  var iframe = document.getElementById("card");
+  var fxBar = document.getElementById("fxBar");
+  var stripToggle = document.getElementById("stripToggle");
+  var replayBtn = document.getElementById("replayBtn");
+
+  var current = "hearts";
+  var stripOn = false;
+  var ready = false;
+
+  var EMOJI_SETS = {
+    love: ["🥰", "❤️", "😍"],
+    birthday: ["🎉", "🥳", "🎈"],
+    cute: ["🥺", "🐻", "🌸"],
+    hype: ["🔥", "🙌", "🤩"],
+  };
+  var currentEmojis = EMOJI_SETS.love.slice();
+
+  var STRIP_TINTS = [
+    "linear-gradient(135deg,#e69680,#d97a8e)",
+    "linear-gradient(135deg,#c8aa5a,#e0c178)",
+    "linear-gradient(135deg,#96b4c8,#b3cddc)",
+    "linear-gradient(135deg,#e6b3bf,#c8849a)"
+  ];
+
+  function win() { return iframe.contentWindow; }
+  function doc() { return iframe.contentWindow.document; }
+
+  function buildStrip(on) {
+    var d = doc();
+    var strip = d.getElementById("photostrip");
+    var polaroid = d.querySelector(".polaroid");
+    var reveal = d.getElementById("photostripReveal");
+    if (!strip || !reveal) return;
+    while (strip.firstChild) strip.removeChild(strip.firstChild);
+    if (on) {
+      if (polaroid) polaroid.style.display = "none";
+      for (var i = 0; i < 3; i++) {
+        var cell = d.createElement("div");
+        cell.className = "strip-cell";
+        cell.style.background = STRIP_TINTS[i % STRIP_TINTS.length];
+        strip.appendChild(cell);
+      }
+      reveal.setAttribute("aria-hidden", "false");
+    } else {
+      if (polaroid) polaroid.style.display = "";
+      reveal.classList.remove("rolled");
+      reveal.style.height = "0px";
+    }
+  }
+
+  function play() {
+    if (!ready) return;
+    var w = win(), d = doc();
+    // Reset any open state (resetCard runs on the replay handler).
+    var replay = d.getElementById("replay");
+    if (replay) replay.click();
+    // Set the effect and re-bias the engine config.
+    w.CARD_EFFECT = current;
+    if (w.__applyEffectConfig) w.__applyEffectConfig();
+    // Apply the chosen falling-emoji set (preloads the Apple images).
+    if (w.__applyEmojis) w.__applyEmojis(currentEmojis);
+    // (Re)build the strip placeholders for the chosen mode.
+    buildStrip(stripOn);
+    // Open the card after a tick so the reset settles first.
+    setTimeout(function () {
+      var card = d.getElementById("card");
+      if (card) card.click();
+    }, 80);
+  }
+
+  fxBar.addEventListener("click", function (e) {
+    var b = e.target.closest(".btn");
+    if (!b) return;
+    current = b.getAttribute("data-fx");
+    [].forEach.call(fxBar.querySelectorAll(".btn"), function (x) {
+      x.setAttribute("aria-pressed", x === b ? "true" : "false");
+    });
+    play();
+  });
+
+  stripToggle.addEventListener("click", function () {
+    stripOn = !stripOn;
+    stripToggle.setAttribute("aria-pressed", stripOn ? "true" : "false");
+    stripToggle.textContent = "Photo-booth strip: " + (stripOn ? "on" : "off");
+    play();
+  });
+
+  document.getElementById("emojiBar").addEventListener("click", function (e) {
+    var b = e.target.closest(".btn");
+    if (!b) return;
+    currentEmojis = (EMOJI_SETS[b.getAttribute("data-em")] || EMOJI_SETS.love).slice();
+    [].forEach.call(document.querySelectorAll("#emojiBar .btn"), function (x) {
+      x.setAttribute("aria-pressed", x === b ? "true" : "false");
+    });
+    play();
+  });
+
+  replayBtn.addEventListener("click", play);
+
+  iframe.addEventListener("load", function () {
+    ready = true;
+    // Give the engine IIFE a moment to wire up, then auto-play the default.
+    setTimeout(play, 250);
+  });
+</script>
+</body>
+</html>
