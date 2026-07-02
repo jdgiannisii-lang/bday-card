@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Make a card</title>
 
+<!-- Tiny inline favicon: paper square, rose heart. No extra request. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f8f1e3'/%3E%3Cpath d='M16 24.5C10 20 7.5 16.6 7.5 13.4 7.5 10.9 9.4 9 11.8 9c1.7 0 3.2.9 4.2 2.4C17 9.9 18.5 9 20.2 9c2.4 0 4.3 1.9 4.3 4.4 0 3.2-2.5 6.6-8.5 11.1z' fill='%23c25470'/%3E%3C/svg%3E" />
+
 <!-- Fonts load async so the form paints without waiting on fonts.googleapis.com. -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -76,8 +79,16 @@
     padding: 12px 14px; line-height: 1.5;
   }
   input::placeholder, textarea::placeholder { color: var(--ink-soft); }
-  input:focus, textarea:focus, .dropzone:focus-within {
-    outline: 2px solid var(--rose); outline-offset: 1px;
+  input[type=text], textarea { transition: border-color .15s, box-shadow .15s; }
+  /* The active field should be unmistakable: rose border plus a soft outer glow. */
+  input[type=text]:focus, textarea:focus {
+    outline: none; border-color: var(--rose);
+    box-shadow: 0 0 0 4px rgba(194,84,112,.14);
+  }
+  /* Visible keyboard focus for everything else (chips, buttons, the dropzone). */
+  button:focus-visible, .chip:focus-visible, .dropzone:focus-visible,
+  input[type=checkbox]:focus-visible {
+    outline: 2px solid var(--rose); outline-offset: 2px;
   }
   textarea { resize: vertical; min-height: 96px; }
 
@@ -85,6 +96,10 @@
     background: var(--paper-warm); border: 1px dashed var(--paper-edge); border-radius: var(--radius);
     min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 8px; color: var(--ink-soft); cursor: pointer; text-align: center; padding: 16px;
+    transition: border-color .15s, background .15s;
+  }
+  .dropzone:hover, .dropzone:focus-visible, .dropzone:focus-within {
+    border-color: var(--rose); background: var(--paper);
   }
   .dropzone svg { width: 28px; height: 28px; stroke: var(--ink-soft); fill: none; stroke-width: 1.6; }
   .dropzone input[type=file] { display: none; }
@@ -117,8 +132,18 @@
     min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid transparent;
     background: var(--paper-warm); color: var(--ink-soft); font-family: 'Outfit', sans-serif; font-size: 15px;
     cursor: pointer; display: inline-flex; align-items: center;
+    transition: border-color .15s, background .15s;
   }
+  /* Hover hint for pointer devices only; blush is rose at roughly half strength.
+     Declared before the pressed rule so a selected chip stays full rose on hover. */
+  @media (hover: hover) { .chip:hover { border-color: var(--blush); } }
   .chip[aria-pressed="true"] { border-color: var(--rose); color: var(--rose-deep); }
+
+  /* Theme swatch: a little circle, paper outside, accent dot inside (inline background). */
+  .chip .swatch {
+    width: 14px; height: 14px; border-radius: 999px; margin-right: 8px; flex: none;
+    border: 1px solid var(--paper-edge);
+  }
 
   /* Three individual falling-emoji slots. Each holds one emoji; tap to change it. */
   .emoji-slots { display: flex; gap: 12px; margin-top: 12px; }
@@ -136,9 +161,11 @@
   .submit {
     width: 100%; min-height: 48px; margin-top: 32px; border: none; border-radius: var(--radius);
     background: var(--rose); color: var(--paper); font-family: 'Outfit', sans-serif; font-weight: 500;
-    font-size: 16px; cursor: pointer;
+    font-size: 16px; cursor: pointer; transition: background .15s;
   }
-  .submit:disabled { opacity: .6; cursor: default; }
+  .submit:not(:disabled):hover { background: var(--rose-deep); }
+  /* Disabled reads as paper, not as a faded rose, so ready vs not is unambiguous. */
+  .submit:disabled { background: var(--paper-edge); color: var(--ink-soft); cursor: default; }
   .making { font-family: 'Caveat', cursive; font-size: 16px; color: var(--ink-soft); text-align: center; margin-top: 12px; min-height: 0; }
 
   /* Surface B: share state */
@@ -232,6 +259,16 @@
           <button type="button" class="chip" data-value="petals" aria-pressed="false">Petals</button>
           <button type="button" class="chip" data-value="sparkles" aria-pressed="false">Sparkles</button>
           <button type="button" class="chip" data-value="balloons" aria-pressed="false">Balloons</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">The look</label>
+        <div class="chips" id="themeChips" role="group">
+          <button type="button" class="chip" data-value="cream" aria-pressed="true"><span class="swatch" aria-hidden="true" style="background: radial-gradient(circle, #c25470 0 4px, #f8f1e3 4px);"></span>Cream</button>
+          <button type="button" class="chip" data-value="sage" aria-pressed="false"><span class="swatch" aria-hidden="true" style="background: radial-gradient(circle, #5f8563 0 4px, #f5f3e9 4px);"></span>Sage</button>
+          <button type="button" class="chip" data-value="dusk" aria-pressed="false"><span class="swatch" aria-hidden="true" style="background: radial-gradient(circle, #d3a952 0 4px, #2a3040 4px);"></span>Dusk</button>
+          <button type="button" class="chip" data-value="sky" aria-pressed="false"><span class="swatch" aria-hidden="true" style="background: radial-gradient(circle, #5b7fa6 0 4px, #f0f3f7 4px);"></span>Sky</button>
         </div>
       </div>
 
@@ -350,6 +387,7 @@
   let photoBlobs = []; // [{ blob, url }] in strip order
   let occasion = "justBecause";
   let effect = "hearts";
+  let theme = "cream";
 
   // Consent is required to enable submit (UI-SPEC / Stage 0 spec 5.2). The button
   // ships disabled and unlocks only when the box is checked.
@@ -370,6 +408,7 @@
   }
   wireChips("occasionChips", (v) => { occasion = v; });
   wireChips("effectChips", (v) => { effect = v; });
+  wireChips("themeChips", (v) => { theme = v; });
 
   // Falling-emoji picker: three individually editable slots, with themed presets
   // that fill all three at once. Default = love. Each slot holds one emoji.
@@ -520,7 +559,7 @@
 
     const result = await saveCard({
       recipientName, message, signoff, whoSentYou,
-      occasion, effect, emojis: chosenEmojis,
+      occasion, effect, theme, emojis: chosenEmojis,
       photoBlobs: photoBlobs.map((p) => p.blob),
       refCardId, generation,
     });
