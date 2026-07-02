@@ -170,6 +170,30 @@ async function main() {
     shots.push(makerShot);
     log("PASS: maker rendered, screenshot saved:", makerShot);
 
+    // Optical centering guard (always runs). The closed card must sit dead
+    // center of the VISIBLE area on the landing and the card view. Numeric,
+    // because headless Chromium uses zero-width overlay scrollbars and a
+    // few-pixel drift is invisible in screenshots (a real regression shipped
+    // that way once: the hand tilt's perspective projection pushed the card
+    // 2px right on every screen until it was measured).
+    for (const path of ["/index.html", "/card.html?c=none"]) {
+      await page.goto(`${BASE}${path}`, { waitUntil: "networkidle" });
+      await page.waitForSelector(".card");
+      await page.waitForTimeout(1300); // let the settle animation land
+      const m = await page.evaluate(() => {
+        const r = document.querySelector(".card").getBoundingClientRect();
+        return {
+          off: (r.left + r.width / 2) - document.documentElement.clientWidth / 2,
+        };
+      });
+      if (Math.abs(m.off) > 1.25) {
+        log(`FAIL: closed card off visible center by ${m.off.toFixed(2)}px on ${path} (limit 1.25px).`);
+        exitCode = 1;
+      } else {
+        log(`PASS: closed card centered on ${path} (off by ${m.off.toFixed(2)}px).`);
+      }
+    }
+
     // Gate the deep steps on real Supabase creds.
     if (!hasSupabaseCreds()) {
       log("SKIP: shared/config.js has no real Supabase creds (still REPLACE_ME).");
@@ -180,7 +204,10 @@ async function main() {
       return; // exit 0 in finally
     }
 
-    // Step 3: fill + submit the create form.
+    // Step 3: fill + submit the create form. Navigate fresh: earlier steps
+    // (the centering guard) may have left the page elsewhere.
+    await page.goto(`${BASE}/maker.html`, { waitUntil: "networkidle" });
+    await page.waitForSelector("#makerForm");
     const fixture = writeJpegFixture();
     await page.fill("#recipientName", "Rachel");
     await page.fill("#message", "You make ordinary days feel like a celebration. Happy everything.");
