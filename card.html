@@ -35,12 +35,23 @@
 <meta property="og:url" content="https://jdgiannisii-lang.github.io/bday-card/" />
 <meta name="twitter:card" content="summary_large_image" />
 
+<!--
+  Fonts load async so the first paint NEVER waits on fonts.googleapis.com (the
+  recipient view must paint with zero blocking network calls). The stylesheet
+  arrives with media="print" (non blocking), then swaps itself to all onload.
+  Until it lands, display=swap shows the system fallbacks; the cover is visible
+  from the very first frame either way.
+-->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap"
+      rel="stylesheet" media="print" onload="this.media='all'" />
+<noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
+</noscript>
 
 <style>
-  /* Tokens and engine styles inherited verbatim from index.html. */
+  /* Design tokens shared by every page (landing, maker, card view). */
   :root {
     --paper:      #f8f1e3;
     --paper-warm: #f3e8d4;
@@ -172,8 +183,8 @@
   .scroll-fade {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 58px;
-    background: linear-gradient(to top, var(--paper) 14%, rgba(248,241,227,0));
+    height: 72px;
+    background: linear-gradient(to top, var(--paper) 30%, rgba(248,241,227,0));
     border-radius: 0 0 var(--radius) var(--radius);
     pointer-events: none;
     opacity: 0;
@@ -182,7 +193,7 @@
   }
   .scroll-cue {
     position: absolute;
-    left: 0; right: 0; bottom: 7px;
+    left: 0; right: 0; bottom: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -194,6 +205,12 @@
     transition: opacity .45s;
     pointer-events: none;
     z-index: 3;
+  }
+  .scroll-cue span {
+    background: rgba(248,241,227,.92);
+    border-radius: 999px;
+    padding: 0 10px 2px;
+    box-shadow: 0 0 10px 4px rgba(248,241,227,.85);
   }
   .scroll-cue svg {
     width: 17px; height: 17px;
@@ -485,37 +502,56 @@
     z-index: 50;
   }
 
+  /* Both bottom controls sit where the emoji pile lands, so each floats on a
+     translucent paper pill (blur + shadow) that keeps the text readable over
+     the emojis instead of buried in them. */
   .replay {
     position: fixed;
-    bottom: 26px; left: 50%;
+    bottom: 18px; left: 50%;
     transform: translateX(-50%) translateY(14px);
     z-index: 60;
-    border: none; background: none; cursor: pointer;
+    border: 1px solid rgba(203,164,85,.28);
+    background: rgba(248,241,227,.9);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(112,72,48,.18);
+    cursor: pointer;
     font-family: 'Caveat', cursive;
-    font-size: 20px;
+    font-size: 19px;
     color: var(--rose-deep);
     opacity: 0; pointer-events: none;
     transition: opacity .5s, transform .5s;
-    border-bottom: 1.5px solid rgba(158,58,85,.4);
-    padding: 0 2px 1px;
+    padding: 4px 16px 6px;
   }
   .replay.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-  .replay:hover { color: var(--rose); border-color: var(--rose); }
+  .replay:hover { color: var(--rose); }
 
-  /* Surface C: the recipient CTA. Caveat, rose, a single underline, not a button. */
+  /* Surface C: the recipient CTA. Caveat, rose, a single underline, on the pill. */
   .cta {
     position: fixed;
-    bottom: 64px; left: 50%;
+    bottom: 66px; left: 50%;
     transform: translateX(-50%) translateY(14px);
     z-index: 60;
+    /* fixed + left:50% shrink-to-fit would wrap the label at half the viewport;
+       max-content keeps the pill one tidy line. */
+    width: max-content;
+    max-width: min(94vw, 380px);
     text-align: center;
     opacity: 0; pointer-events: none;
     transition: opacity .5s, transform .5s;
+    background: rgba(248,241,227,.92);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(203,164,85,.32);
+    border-radius: 18px;
+    box-shadow: 0 10px 28px rgba(112,72,48,.2);
+    padding: 10px 22px 12px;
   }
   .cta.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
   .cta a {
     font-family: 'Caveat', cursive;
-    font-size: 20px;
+    font-size: 21px;
     color: var(--rose-deep);
     text-decoration: none;
     border-bottom: 1.5px solid var(--rose);
@@ -562,6 +598,7 @@
     .polaroid { transform: rotate(-3deg); }
     .signoff { align-self: flex-end; }
     .cta { transition: none; }
+    .replay { transition: none; }
     .photostrip-reveal { transition: none; }
     .photostrip-reveal.rolled .photostrip { animation: none; }
     .photostrip { transform: rotate(-1deg); }
@@ -576,9 +613,11 @@
     <div class="card" id="card" role="button" tabindex="0" aria-label="Open your card">
 
       <div class="face inside">
-       <div class="inside-scroll" id="insideScroll">
+       <div class="inside-scroll" id="insideScroll" aria-live="polite">
 
-        <div class="polaroid">
+        <!-- Ships hidden: the bridge reveals it only once a real photo src exists,
+             so an early open never shows an empty frame with a broken image. -->
+        <div class="polaroid" style="display:none">
           <div class="tape"></div>
           <img class="pic" src="" alt="Card photo" />
           <div class="cap"></div>
@@ -626,7 +665,7 @@
   <canvas id="fx" aria-hidden="true"></canvas>
   <button class="replay" id="replay" type="button">read it again</button>
   <div class="cta" id="cta">
-    <a href="maker.html" id="ctaLink">Make one for someone you love &#8594;</a>
+    <a href="maker.html" id="ctaLink">Make one for someone you love&nbsp;&#8594;</a>
     <span class="cta-sub">It's free, and it takes a minute.</span>
   </div>
   <div class="retry" id="retry">This card is taking a moment. Tap to try again.</div>
@@ -673,13 +712,29 @@
   if (scroller) scroller.addEventListener("scroll", atBottom, { passive: true });
   window.addEventListener("resize", function () { if (isOpen) refreshCue(); });
 
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var dpr = 1;
   var W = 0, H = 0;
   function resize() {
+    // Recompute dpr every time: dragging a window across monitors (or a phone
+    // zoom change) alters devicePixelRatio after load.
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = Math.floor(W * dpr);
     canvas.height = Math.floor(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // A settled pile sleeps and the loop stops, so after a rotate or toolbar
+    // collapse the emojis would float mid-air or sit below the new fold. Wake
+    // them so they re-settle against the new floor and walls.
+    if (emojiBalls && emojiBalls.length) {
+      for (var i = 0; i < emojiBalls.length; i++) {
+        var b = emojiBalls[i];
+        b.asleep = false; b.still = 0;
+        if (b.x < b.cR) b.x = b.cR;
+        else if (b.x > W - b.cR) b.x = W - b.cR;
+        if (b.y > H - 8 - b.cR) b.y = H - 8 - b.cR;
+      }
+      startLoop();
+    }
   }
   resize();
   window.addEventListener("resize", resize);
@@ -825,8 +880,14 @@
 
   function floorFor(b) { return H - 8 - b.cR; }
 
+  // Each drop is a numbered run: 37 emojis arrive on staggered timeouts over
+  // ~2s, and a reset mid-drop must invalidate the stragglers or a quick reopen
+  // stacks two drops into one oversized pile.
+  var dropRun = 0;
   function dropEmojis() {
     if (reduceMotion) return;
+    dropRun++;
+    var run = dropRun;
     emojiBalls = [];
     var size = 33;
     var vR = size * 0.46;
@@ -838,7 +899,7 @@
     for (var i = 0; i < count; i++) {
       (function (idx) {
         setTimeout(function () {
-          if (!isOpen) return;
+          if (!isOpen || run !== dropRun) return;
           emojiBalls.push({
             x: rand(margin, W - margin),
             y: -cR - rand(0, 90),
@@ -964,7 +1025,12 @@
       if (p.sway !== undefined) { p.sway += .05; p.x += Math.sin(p.sway) * .7; }
       p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vx *= .995;
       p.life -= p.decay;
-      if (p.y > H + 40 || p.y < -140 || p.life <= 0) { p.life = 0; continue; }
+      // Balloons spawn BELOW the screen and rise, so they are only dead once
+      // they float off the top; everything else falls and dies off the bottom.
+      // (A single shared cull here once killed most balloons on their first
+      // frame, and deleted tall-tossed hearts that would have fallen back in.)
+      var gone = p.kind === "balloon" ? (p.y < -p.size * 2.2 - 20) : (p.y > H + 40);
+      if (gone || p.life <= 0) { p.life = 0; continue; }
       alive++;
 
       ctx.save();
@@ -1090,6 +1156,7 @@
   }
   function resetCard() {
     isOpen = false;
+    dropRun++; // invalidate any emoji still queued from the previous open
     card.classList.remove("opened");
     replay.classList.remove("show");
     if (cta) cta.classList.remove("show");
@@ -1128,12 +1195,30 @@
   // The recipient open is sacred. The engine IIFE above already painted the
   // closed cover synchronously. ONLY NOW do we fetch the card row and wire the
   // analytics, so neither ever blocks the first frame (research anti-pattern).
-  import { getCardByToken } from "./shared/supabase.js";
-  import { applyCardToEngine } from "./shared/engine-bridge.js";
-  import {
-    initAnalytics, track, markEngagedOnBottom,
-    startDwellTimer, pauseDwell, resumeDwell,
-  } from "./shared/analytics.js";
+  //
+  // Every import here is DYNAMIC and individually guarded. With static imports
+  // a single missing module (a deploy that forgot shared/config.js) would kill
+  // this whole script at parse time: no fill, no retry message, just a blank
+  // generic card. Dynamic imports let each failure degrade on its own terms.
+
+  function showRetry() {
+    var retry = document.getElementById("retry");
+    if (!retry) return;
+    retry.classList.add("show");
+    retry.addEventListener("click", function () { location.reload(); });
+  }
+
+  // Analytics no-op stubs, replaced by the real module if it loads. The card
+  // must play identically with analytics absent, blocked, or broken.
+  var A = {
+    initAnalytics: function () { return Promise.resolve(); },
+    track: function () {},
+    setGeneration: function () {},
+    markEngagedOnBottom: function () {},
+    startDwellTimer: function () {},
+    pauseDwell: function () {},
+    resumeDwell: function () {},
+  };
 
   // Read the token from a clean /c/<token>/ path, falling back to ?c=<token>.
   function readToken() {
@@ -1175,7 +1260,7 @@
     var link = document.getElementById("ctaLink");
     if (!link) return;
     link.addEventListener("click", function () {
-      track("cta_clicked");
+      A.track("cta_clicked");
     });
   }
 
@@ -1200,7 +1285,7 @@
     // card_engaged about a second after open, overstating the conversion.
     function noteOverflows() { return scroller && (scroller.scrollHeight - scroller.clientHeight > 6); }
     function maybeEngageBottom() {
-      if (inside.classList.contains("read") && noteOverflows()) markEngagedOnBottom();
+      if (inside.classList.contains("read") && noteOverflows()) A.markEngagedOnBottom();
     }
     if (inside && typeof MutationObserver !== "undefined") {
       var obs = new MutationObserver(maybeEngageBottom);
@@ -1216,7 +1301,7 @@
       function arm() {
         if (armed) return;
         armed = true;
-        startDwellTimer();
+        A.startDwellTimer();
       }
       card.addEventListener("click", arm);
       card.addEventListener("keydown", function (e) {
@@ -1225,8 +1310,8 @@
     }
 
     document.addEventListener("visibilitychange", function () {
-      if (document.hidden) pauseDwell();
-      else resumeDwell();
+      if (document.hidden) A.pauseDwell();
+      else A.resumeDwell();
     });
   }
 
@@ -1235,39 +1320,81 @@
     var generation = readGeneration();
     var reduceMotion = prefersReducedMotion();
 
-    // Init analytics first (fire and forget; it never blocks and never throws),
-    // then wire the CTA + the engaged hooks. card_opened fires here: opening the
-    // page IS the open for the recipient (the cover is already painted and the
-    // tap-to-flip is the same gesture). We fire once on load.
-    // Fire card_opened only AFTER analytics is ready. initAnalytics is async (it
-    // lazy-loads posthog, then registers the super props); firing synchronously
-    // here would no-op because window.posthog is not set yet, silently losing the
-    // funnel's denominator. The .then keeps it fire-and-forget and never blocks the
-    // card fetch below, which runs in parallel.
-    initAnalytics({ cardId: token || "unknown", generation: generation, reduceMotion: reduceMotion })
-      .then(function () { track("card_opened"); });
+    // Data layer first: without it there is no card to fill, so a failed import
+    // (missing shared/config.js on a hand-rolled deploy) shows the soft retry
+    // instead of leaving a permanently generic card with no explanation.
+    var getCardByToken = null;
+    var applyCardToEngine = null;
+    var photoPrefixes = [];
+    try {
+      var dataMod = await import("./shared/supabase.js");
+      var bridgeMod = await import("./shared/engine-bridge.js");
+      var configMod = await import("./shared/config.js");
+      getCardByToken = dataMod.getCardByToken;
+      applyCardToEngine = bridgeMod.applyCardToEngine;
+      // Only our own storage may serve card photos (the row is untrusted; anyone
+      // holding the public anon key can insert one).
+      if (configMod.SUPABASE_URL && configMod.SUPABASE_URL.indexOf("REPLACE_ME") === -1) {
+        photoPrefixes = [configMod.SUPABASE_URL.replace(/\/$/, "") + "/storage/v1/object/public/"];
+      }
+    } catch (err) {
+      if (token) showRetry();
+    }
+
+    // Analytics is optional: a failed import just leaves the no-op stubs.
+    try {
+      var mod = await import("./shared/analytics.js");
+      A.initAnalytics = mod.initAnalytics;
+      A.track = mod.track;
+      A.setGeneration = mod.setGeneration;
+      A.markEngagedOnBottom = mod.markEngagedOnBottom;
+      A.startDwellTimer = mod.startDwellTimer;
+      A.pauseDwell = mod.pauseDwell;
+      A.resumeDwell = mod.resumeDwell;
+    } catch (err) { /* the card plays the same without analytics */ }
+
+    // Kick off the row fetch immediately; everything below runs while it flies.
+    var rowPromise = (token && getCardByToken)
+      ? getCardByToken(token)
+      : Promise.resolve(null);
+
+    // card_opened fires once analytics is ready AND the row has had a fair
+    // chance (4s cap) to land, so the event carries the row's true generation.
+    // Share links carry no ?g=, so the URL generation is 0 for every recipient;
+    // the row's stored generation is the real depth (K-factor needs it).
+    A.initAnalytics({ cardId: token || "unknown", generation: generation, reduceMotion: reduceMotion })
+      .then(function () {
+        return Promise.race([
+          rowPromise,
+          new Promise(function (r) { setTimeout(r, 4000); }),
+        ]);
+      })
+      .then(function (row) {
+        if (row && Number.isFinite(row.generation)) A.setGeneration(row.generation);
+        A.track("card_opened");
+      });
 
     wireCta(token, generation);
     wireCtaAnalytics();
     wireEngagement();
 
-    if (!token) return; // no token: the cover still shows; nothing to fill.
+    if (!token || !getCardByToken) return; // no token: the cover still shows; nothing to fill.
 
-    var row = await getCardByToken(token);
+    var row = await rowPromise;
     if (!row) {
       // Degrade gracefully: the cover is already painted. Offer a soft retry
       // (covers the paused-project case, research Pitfall 2).
-      var retry = document.getElementById("retry");
-      if (retry) {
-        retry.classList.add("show");
-        retry.addEventListener("click", function () { location.reload(); });
-      }
+      showRetry();
       return;
     }
 
-    applyCardToEngine(row);
+    applyCardToEngine(row, { photoPrefixes: photoPrefixes });
     // Re-bias the celebration counts now that we know the chosen effect.
     if (window.__applyEffectConfig) window.__applyEffectConfig();
+    // Rewire the CTA from the row's stored generation: the URL never carries ?g=
+    // on a shared link, so without this every referred card records as gen 1
+    // forever and generation-depth analysis is flat.
+    if (Number.isFinite(row.generation)) wireCta(token, row.generation);
   }
 
   load();

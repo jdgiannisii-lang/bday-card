@@ -7,9 +7,12 @@
 // What it does:
 //   1. Serves the repo statically (python3 -m http.server), waits for the port.
 //   2. Launches headless chromium, loads maker.html, screenshots it.
-//   3. (deep) Fills + submits the create form, reads the share-state link.
-//   4. (deep) Opens the card via ?c=<token> (the local server has no 404
-//      fallback), clicks .card to open, asserts the engine canvas #fx, screenshots.
+//   3. (deep) Fills + submits the create form, reads the share-state link. The
+//      app generates card.html?c=<token> links (shared/supabase.js saveCard),
+//      so that is the format asserted and the token comes from the ?c= param.
+//   4. (deep) Opens the card via that same card.html?c=<token> link, waits for
+//      the row to fill the greeting, clicks .card to open, asserts the engine
+//      canvas #fx and the row-derived CTA href, screenshots.
 //   5. (deep) Asserts the "Make one for someone you love" CTA appears after the
 //      animation settles and that activating it routes back into the maker.
 //
@@ -21,11 +24,12 @@
 //   importing it from the resolved global location.
 //
 // Graceful degradation:
-//   The deep steps (3 to 5) need real Supabase creds in shared/config.js. If those
-//   are absent (still REPLACE_ME) or a save fails, the deep steps are SKIPPED with
-//   a clear message and the script still exits 0 after the maker render screenshot,
-//   so render + layout are always smoke-checked. The full create-to-CTA chain is
-//   only ASSERTED when a card link is actually produced.
+//   The deep steps (3 to 5) need real Supabase creds in shared/config.js. The ONLY
+//   skip is up front: if shared/config.js is absent or still REPLACE_ME, steps 3
+//   to 5 are SKIPPED with a clear message and the script exits 0 after the maker
+//   render screenshot, so render + layout are always smoke-checked. Once real
+//   creds are present the full chain is ASSERTED: a save that fails or produces a
+//   missing/malformed share link FAILS the run (exit 1). No silent green.
 //
 // No forbidden long-dash anywhere in this file.
 
@@ -185,29 +189,56 @@ async function main() {
     await page.click('#occasionChips .chip[data-value="birthday"]');
     await page.click('#effectChips .chip[data-value="confetti"]');
     await page.setInputFiles("#photo", fixture);
-    await page.waitForSelector("#thumbWrap", { state: "visible" }).catch(() => {});
+    // Thumbnails render as .thumb children of the #thumbs row.
+    await page.waitForSelector("#thumbs .thumb", { state: "visible" }).catch(() => {});
     await page.check("#consent");
     await page.click("#submitBtn");
 
-    // Step 4: read the share-state link.
+    // Step 4: read the share-state link. Creds are real past this point, so a
+    // missing or malformed link is a genuine regression, never a skip: the app
+    // must produce a card.html?c=<token> link (shared/supabase.js saveCard).
     await page.waitForSelector("#share", { state: "visible", timeout: 15000 });
     const link = await page.inputValue("#shareLink");
-    if (!link || !/\/c\/[^/]+\/?$/.test(link)) {
-      log("SKIP: submit did not produce a /c/<token>/ link (save likely failed).");
-      log("SUMMARY: PASS (render + layout) | SKIP (deep chain, no link produced)");
-      log("Screenshots:", shots.join(", "));
-      return;
+    if (!link || !/card\.html\?c=[^&\s]+$/.test(link)) {
+      throw new Error(
+        `share link missing or malformed; expected .../card.html?c=<token>, got: ${JSON.stringify(link)}`
+      );
     }
     const shareShot = join(SHOTS_DIR, "share.png");
     await page.screenshot({ path: shareShot, fullPage: true });
     shots.push(shareShot);
-    const token = (link.match(/\/c\/([^/]+)\/?$/) || [])[1];
+    const token = new URL(link).searchParams.get("c");
+    if (!token) throw new Error(`could not extract the ?c= token from the share link: ${link}`);
     log("PASS: card created, token:", token);
 
-    // Open the card via the ?c=<token> form (local server has no 404 fallback).
+    // Open the card exactly as a recipient would, via the app-generated
+    // card.html?c=<token> link (the clean /c/<token>/ path only exists on the
+    // deployed site, where the deploy generates the fallback from card.html).
     const cardUrl = `${BASE}/card.html?c=${token}`;
     await page.goto(cardUrl, { waitUntil: "networkidle" });
     await page.waitForSelector("#fx", { timeout: 15000 });
+
+    // The row fill is async (Supabase fetch after paint): the greeting starts
+    // empty and fills from the row. Waiting for the recipient's name proves the
+    // row arrived and the engine bridge applied it.
+    await page.waitForFunction(() => {
+      const g = document.querySelector(".greeting");
+      return !!g && /Rachel/.test(g.textContent || "");
+    }, null, { timeout: 15000 });
+    log("PASS: greeting filled from the row (recipient name present).");
+
+    // With the row landed, the CTA is rewired from the row's stored generation:
+    // href must be maker.html?ref=<token>&g=<generation + 1>.
+    const ctaHref = await page.getAttribute("#ctaLink", "href");
+    const tokenRe = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const ctaHrefRe = new RegExp(`maker\\.html\\?ref=${tokenRe}&g=\\d+$`);
+    if (!ctaHref || !ctaHrefRe.test(ctaHref)) {
+      throw new Error(
+        `#ctaLink href wrong; expected maker.html?ref=${token}&g=<n>, got: ${JSON.stringify(ctaHref)}`
+      );
+    }
+    log("PASS: CTA href carries ref + generation:", ctaHref);
+
     // Trigger the engine open (the engine wires a click on .card).
     await page.click(".card");
     // Assert the engine canvas is present and sized.

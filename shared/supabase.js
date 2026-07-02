@@ -40,25 +40,16 @@ async function mintToken() {
   return nanoid();
 }
 
-// A small proxy so callers can still write `supabase.storage...` ergonomically
-// while the real client is built lazily on first use. Each access returns a
-// thenable-free async passthrough is overkill here, so we expose the builder
-// instead and keep this as a clearly documented async accessor.
-export const supabase = {
-  // Resolve the real client (builds it on first call). Kept as a method rather
-  // than a live binding so module load never touches the network.
-  client: getClient,
-};
-
 // saveCard(formData)
 //   formData: {
-//     recipientName, message, signoff, coverTitle, caption,
-//     occasion, effect, photoBlob (Blob|File|null), refCardId, generation
+//     recipientName, message, signoff, occasion, effect, emojis,
+//     photoBlobs (Blob[] in strip order) or photoBlob (single, back-compat),
+//     whoSentYou, refCardId, generation
 //   }
-//   Mints a token, uploads the photo (if any) to an unguessable Storage path,
+//   Mints a token, uploads the photos (if any) to unguessable Storage paths,
 //   inserts the cards row, and returns { token, url } where url is the absolute
-//   /c/<token>/ link. On any Supabase error it returns { error } rather than
-//   throwing, so the maker can show the UI-SPEC error copy.
+//   card.html?c=<token> link. On any Supabase error it returns { error } rather
+//   than throwing, so the maker can show the UI-SPEC error copy.
 export async function saveCard(formData) {
   try {
     const data = formData || {};
@@ -73,12 +64,27 @@ export async function saveCard(formData) {
       ? data.photoBlobs.filter(Boolean)
       : (data.photoBlob ? [data.photoBlob] : []);
     const photo_urls = [];
+    const uploaded_paths = [];
+    // Best-effort removal of already-uploaded photos when a later step fails,
+    // so a failed save does not strand orphan files in the bucket.
+    async function cleanupUploads() {
+      if (!uploaded_paths.length) return;
+      try {
+        await client.storage.from(PHOTO_BUCKET).remove(uploaded_paths);
+      } catch (e) {
+        // Cleanup is best effort; the save error is what the caller sees.
+      }
+    }
     for (let i = 0; i < blobs.length; i++) {
       const path = `photos/${token}-${i}.jpg`; // token is a nanoid: unguessable
       const up = await client.storage
         .from(PHOTO_BUCKET)
         .upload(path, blobs[i], { contentType: "image/jpeg", upsert: false });
-      if (up.error) return { error: up.error };
+      if (up.error) {
+        await cleanupUploads();
+        return { error: up.error };
+      }
+      uploaded_paths.push(path);
       const pub = client.storage.from(PHOTO_BUCKET).getPublicUrl(path);
       if (pub && pub.data && pub.data.publicUrl) photo_urls.push(pub.data.publicUrl);
     }
@@ -98,10 +104,11 @@ export async function saveCard(formData) {
       recipientName: data.recipientName || "",
       message,
       signoff: data.signoff || "",
-      coverTitle: data.coverTitle || "",
-      caption: data.caption || "",
       photos: photo_urls,
       emojis: Array.isArray(data.emojis) ? data.emojis.filter(Boolean).slice(0, 8) : [],
+      // Self-reported propagation evidence for the ledger. Stored in the row
+      // (never sent to analytics: it is free-text PII).
+      whoSentYou: data.whoSentYou || "",
     };
 
     const row = {
@@ -115,7 +122,10 @@ export async function saveCard(formData) {
     };
 
     const ins = await client.from("cards").insert(row);
-    if (ins.error) return { error: ins.error };
+    if (ins.error) {
+      await cleanupUploads();
+      return { error: ins.error };
+    }
 
     // Build the share URL relative to the app's deployment directory so it works
     // both at the domain root (localhost) and under a project Pages subpath
@@ -137,10 +147,21 @@ export async function saveCard(formData) {
 //   Reads the single cards row for a token. Returns the row, or null if it is
 //   missing or the read errors (so the recipient view can degrade to the cover
 //   plus a soft retry message instead of throwing).
+//
+//   Reads go through the get_card(p_token) SECURITY DEFINER function (migration
+//   0002): direct SELECT on cards is revoked so the table cannot be enumerated
+//   with the public anon key. If the function is missing (0002 not applied yet)
+//   we fall back to the old direct select so existing deployments keep working.
 export async function getCardByToken(token) {
   try {
     if (!token) return null;
     const client = await getClient();
+    const rpc = await client.rpc("get_card", { p_token: token });
+    if (!rpc.error) {
+      const rows = Array.isArray(rpc.data) ? rpc.data : (rpc.data ? [rpc.data] : []);
+      return rows.length ? rows[0] : null;
+    }
+    // Fallback for databases still on migration 0001 only.
     const res = await client.from("cards").select("*").eq("token", token).single();
     if (res.error) return null;
     return res.data || null;

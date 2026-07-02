@@ -5,22 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Hand-animated cards they open in a browser</title>
 
-<script>
-  // This page is served at the app root on localhost (card.html?c=...) but at the
-  // deep /c/<token>/ path in production (the 404 SPA fallback). The inline module
-  // below imports ./shared/*.js relative to the document base, so on the deep path
-  // those would resolve to /<repo>/c/<token>/shared/* and 404. Set <base> to the
-  // app root first so relative module imports and assets resolve correctly in both.
-  (function () {
-    var p = location.pathname;
-    var m = p.match(/^(.*\/)c\/[^/]+\/?$/);
-    var root = m ? m[1] : p.slice(0, p.lastIndexOf("/") + 1);
-    var b = document.createElement("base");
-    b.href = root;
-    document.head.appendChild(b);
-  })();
-</script>
-
 <!--
   STATIC OpenGraph meta. These must be literal HTML in the served head, never
   JS injected, because link preview crawlers do not run JavaScript (research
@@ -35,12 +19,18 @@
 <meta property="og:url" content="https://jdgiannisii-lang.github.io/bday-card/" />
 <meta name="twitter:card" content="summary_large_image" />
 
+<!-- Fonts load async so the first paint never waits on fonts.googleapis.com.
+     display=swap shows system fallbacks until the real faces land. -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap"
+      rel="stylesheet" media="print" onload="this.media='all'" />
+<noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
+</noscript>
 
 <style>
-  /* Tokens and engine styles inherited verbatim from index.html. */
+  /* Design tokens shared by every page (landing, maker, card view). */
   :root {
     --paper:      #f8f1e3;
     --paper-warm: #f3e8d4;
@@ -83,11 +73,22 @@
   .stage {
     position: fixed;
     inset: 0;
+    /* The landing's fixed demo bar overlays the top of the viewport; keep the
+       card centered in the space BELOW it so chips never cover the card. */
+    top: 96px;
+    /* ...and clear of the always-visible CTA pill at the bottom. */
+    bottom: 128px;
     display: grid;
     place-items: center;
     perspective: 1800px;
     perspective-origin: 50% 42%;
     z-index: 2;
+  }
+  @media (max-width: 480px) {
+    /* The chip rows wrap taller on narrow phones; keep the card fully clear of
+       both the bar above and the CTA pill below. */
+    .stage { top: 162px; }
+    .card { height: min(54vh, 470px); }
   }
 
   .card {
@@ -172,8 +173,8 @@
   .scroll-fade {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 58px;
-    background: linear-gradient(to top, var(--paper) 14%, rgba(248,241,227,0));
+    height: 72px;
+    background: linear-gradient(to top, var(--paper) 30%, rgba(248,241,227,0));
     border-radius: 0 0 var(--radius) var(--radius);
     pointer-events: none;
     opacity: 0;
@@ -182,7 +183,7 @@
   }
   .scroll-cue {
     position: absolute;
-    left: 0; right: 0; bottom: 7px;
+    left: 0; right: 0; bottom: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -194,6 +195,12 @@
     transition: opacity .45s;
     pointer-events: none;
     z-index: 3;
+  }
+  .scroll-cue span {
+    background: rgba(248,241,227,.92);
+    border-radius: 999px;
+    padding: 0 10px 2px;
+    box-shadow: 0 0 10px 4px rgba(248,241,227,.85);
   }
   .scroll-cue svg {
     width: 17px; height: 17px;
@@ -485,37 +492,56 @@
     z-index: 50;
   }
 
+  /* Both bottom controls sit where the emoji pile lands, so each floats on a
+     translucent paper pill (blur + shadow) that keeps the text readable over
+     the emojis instead of buried in them. */
   .replay {
     position: fixed;
-    bottom: 26px; left: 50%;
+    bottom: 18px; left: 50%;
     transform: translateX(-50%) translateY(14px);
     z-index: 60;
-    border: none; background: none; cursor: pointer;
+    border: 1px solid rgba(203,164,85,.28);
+    background: rgba(248,241,227,.9);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(112,72,48,.18);
+    cursor: pointer;
     font-family: 'Caveat', cursive;
-    font-size: 20px;
+    font-size: 19px;
     color: var(--rose-deep);
     opacity: 0; pointer-events: none;
     transition: opacity .5s, transform .5s;
-    border-bottom: 1.5px solid rgba(158,58,85,.4);
-    padding: 0 2px 1px;
+    padding: 4px 16px 6px;
   }
   .replay.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-  .replay:hover { color: var(--rose); border-color: var(--rose); }
+  .replay:hover { color: var(--rose); }
 
-  /* Surface C: the recipient CTA. Caveat, rose, a single underline, not a button. */
+  /* The maker CTA: Caveat, rose, a single underline, on the pill. */
   .cta {
     position: fixed;
-    bottom: 64px; left: 50%;
+    bottom: 66px; left: 50%;
     transform: translateX(-50%) translateY(14px);
     z-index: 60;
+    /* fixed + left:50% shrink-to-fit would wrap the label at half the viewport;
+       max-content keeps the pill one tidy line. */
+    width: max-content;
+    max-width: min(94vw, 380px);
     text-align: center;
     opacity: 0; pointer-events: none;
     transition: opacity .5s, transform .5s;
+    background: rgba(248,241,227,.92);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(203,164,85,.32);
+    border-radius: 18px;
+    box-shadow: 0 10px 28px rgba(112,72,48,.2);
+    padding: 10px 22px 12px;
   }
   .cta.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
   .cta a {
     font-family: 'Caveat', cursive;
-    font-size: 20px;
+    font-size: 21px;
     color: var(--rose-deep);
     text-decoration: none;
     border-bottom: 1.5px solid var(--rose);
@@ -526,14 +552,6 @@
     display: block; margin-top: 4px;
     font-family: 'Caveat', cursive; font-size: 15px; color: var(--ink-soft);
   }
-
-  /* Soft retry message if the card fetch fails (paused project, offline). */
-  .retry {
-    position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
-    z-index: 60; display: none;
-    font-family: 'Caveat', cursive; font-size: 17px; color: var(--ink-soft); text-align: center;
-  }
-  .retry.show { display: block; }
 
   .petals { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
   .petal {
@@ -562,6 +580,7 @@
     .polaroid { transform: rotate(-3deg); }
     .signoff { align-self: flex-end; }
     .cta { transition: none; }
+    .replay { transition: none; }
     .photostrip-reveal { transition: none; }
     .photostrip-reveal.rolled .photostrip { animation: none; }
     .photostrip { transform: rotate(-1deg); }
@@ -669,7 +688,6 @@
     <a href="maker.html" id="ctaLink">Make your own &#8594;</a>
     <span class="cta-sub">Free, and it takes a minute.</span>
   </div>
-  <div class="retry" id="retry">This card is taking a moment. Tap to try again.</div>
 
 <script>
 (function () {
@@ -713,13 +731,29 @@
   if (scroller) scroller.addEventListener("scroll", atBottom, { passive: true });
   window.addEventListener("resize", function () { if (isOpen) refreshCue(); });
 
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var dpr = 1;
   var W = 0, H = 0;
   function resize() {
+    // Recompute dpr every time: dragging a window across monitors (or a phone
+    // zoom change) alters devicePixelRatio after load.
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = Math.floor(W * dpr);
     canvas.height = Math.floor(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // A settled pile sleeps and the loop stops, so after a rotate or toolbar
+    // collapse the emojis would float mid-air or sit below the new fold. Wake
+    // them so they re-settle against the new floor and walls.
+    if (emojiBalls && emojiBalls.length) {
+      for (var i = 0; i < emojiBalls.length; i++) {
+        var b = emojiBalls[i];
+        b.asleep = false; b.still = 0;
+        if (b.x < b.cR) b.x = b.cR;
+        else if (b.x > W - b.cR) b.x = W - b.cR;
+        if (b.y > H - 8 - b.cR) b.y = H - 8 - b.cR;
+      }
+      startLoop();
+    }
   }
   resize();
   window.addEventListener("resize", resize);
@@ -865,8 +899,14 @@
 
   function floorFor(b) { return H - 8 - b.cR; }
 
+  // Each drop is a numbered run: 37 emojis arrive on staggered timeouts over
+  // ~2s, and a reset mid-drop must invalidate the stragglers or a quick reopen
+  // (every chip tap on this page) stacks two drops into one oversized pile.
+  var dropRun = 0;
   function dropEmojis() {
     if (reduceMotion) return;
+    dropRun++;
+    var run = dropRun;
     emojiBalls = [];
     var size = 33;
     var vR = size * 0.46;
@@ -878,7 +918,7 @@
     for (var i = 0; i < count; i++) {
       (function (idx) {
         setTimeout(function () {
-          if (!isOpen) return;
+          if (!isOpen || run !== dropRun) return;
           emojiBalls.push({
             x: rand(margin, W - margin),
             y: -cR - rand(0, 90),
@@ -1004,7 +1044,12 @@
       if (p.sway !== undefined) { p.sway += .05; p.x += Math.sin(p.sway) * .7; }
       p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vx *= .995;
       p.life -= p.decay;
-      if (p.y > H + 40 || p.y < -140 || p.life <= 0) { p.life = 0; continue; }
+      // Balloons spawn BELOW the screen and rise, so they are only dead once
+      // they float off the top; everything else falls and dies off the bottom.
+      // (A single shared cull here once killed most balloons on their first
+      // frame, and deleted tall-tossed hearts that would have fallen back in.)
+      var gone = p.kind === "balloon" ? (p.y < -p.size * 2.2 - 20) : (p.y > H + 40);
+      if (gone || p.life <= 0) { p.life = 0; continue; }
       alive++;
 
       ctx.save();
@@ -1130,6 +1175,7 @@
   }
   function resetCard() {
     isOpen = false;
+    dropRun++; // invalidate any emoji still queued from the previous open
     card.classList.remove("opened");
     replay.classList.remove("show");
     if (cta) cta.classList.remove("show");
@@ -1187,8 +1233,10 @@
   var fxChips = document.getElementById("fxChips");
   var emChips = document.getElementById("emChips");
   var stripBtn = document.getElementById("stripBtn");
-  var cta = document.getElementById("ctaLink");
-  if (cta) cta.setAttribute("href", "maker.html");
+  // The path into the maker is the whole point of this page: show the CTA from
+  // the first paint instead of hiding it behind opening the demo card.
+  var ctaWrap = document.getElementById("cta");
+  if (ctaWrap) ctaWrap.classList.add("show");
 
   function buildStrip(on) {
     var strip = document.getElementById("photostrip");

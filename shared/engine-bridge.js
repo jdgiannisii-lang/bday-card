@@ -39,12 +39,41 @@ function setLines(el, lines) {
   });
 }
 
-export function applyCardToEngine(row) {
+// Anyone with the public anon key can insert a cards row, so nothing in it is
+// trusted. Photo URLs must come from our own storage: an arbitrary src would let
+// an attacker-inserted row show any external image (or leak the recipient's IP)
+// under our domain. Callers pass the allowed prefixes (derived from SUPABASE_URL);
+// with no prefixes we allow only same-origin relative paths.
+function safePhotoUrl(url, prefixes) {
+  if (typeof url !== "string" || !url) return null;
+  if (Array.isArray(prefixes) && prefixes.length) {
+    for (const p of prefixes) {
+      if (p && url.indexOf(p) === 0) return url;
+    }
+    return null;
+  }
+  // No allowlist provided: reject absolute/protocol URLs, keep relative paths.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(url) || url.indexOf("//") === 0) return null;
+  return url;
+}
+
+// The falling set must actually be emoji. Without this, "emojis" can be any
+// string (a slur, a link) rained onto the recipient's screen via fillText.
+const EMOJI_ONLY = /^(?:\p{Extended_Pictographic}|\p{Emoji_Component}|\u200d|\ufe0f)+$/u;
+function safeEmojis(list) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((e) => typeof e === "string" && e.length > 0 && e.length <= 16 && EMOJI_ONLY.test(e))
+    .slice(0, 8);
+}
+
+export function applyCardToEngine(row, opts) {
   if (!row) return;
   const doc = document;
   const occ = occasionKey(row.occasion);
   const content = row.content || {};
   const name = content.recipientName || "";
+  const photoPrefixes = (opts && opts.photoPrefixes) || [];
 
   // Greeting: occasion plus recipient name (D-04). Built from newline lines so
   // no innerHTML touches user input.
@@ -55,14 +84,16 @@ export function applyCardToEngine(row) {
   // Photos. 2 or more -> a photo-booth strip that rolls out on open; exactly 1 ->
   // the existing single tilted polaroid; 0 -> neither shows. content.photos (the
   // URL array) is preferred; row.photo_url is the back-compat single-photo path.
-  const photos = Array.isArray(content.photos) ? content.photos.filter(Boolean) : [];
-  const single = photos.length ? photos[0] : (row.photo_url || null);
+  const photos = (Array.isArray(content.photos) ? content.photos : [])
+    .map((u) => safePhotoUrl(u, photoPrefixes))
+    .filter(Boolean);
+  const single = photos.length ? photos[0] : safePhotoUrl(row.photo_url, photoPrefixes);
   const polaroidEl = doc.querySelector(".polaroid");
   const stripEl = doc.querySelector("#photostrip");
 
   if (photos.length >= 2 && stripEl) {
-    // Build the strip: one white-framed cell per photo, in order. src is one of
-    // our own storage URLs (set via setAttribute, no innerHTML on any value).
+    // Build the strip: one white-framed cell per photo, in order. Every src has
+    // passed safePhotoUrl (set via setAttribute, no innerHTML on any value).
     if (polaroidEl) polaroidEl.style.display = "none";
     while (stripEl.firstChild) stripEl.removeChild(stripEl.firstChild);
     photos.forEach((url, i) => {
@@ -85,13 +116,15 @@ export function applyCardToEngine(row) {
       }
     } catch (e) {}
   } else {
-    // Single (or zero) photo: the existing polaroid path.
+    // Single (or zero) photo: the existing polaroid path. The polaroid ships
+    // hidden in the markup (a card opened before the fetch resolves must not
+    // show an empty frame with a broken image); reveal it only with a real src.
     const picEl = doc.querySelector(".polaroid .pic");
     if (picEl) {
       if (single) picEl.setAttribute("src", single);
       picEl.setAttribute("alt", name ? `Photo for ${name}` : "Card photo");
     }
-    if (polaroidEl && !single) polaroidEl.style.display = "none";
+    if (polaroidEl) polaroidEl.style.display = single ? "" : "none";
   }
 
   const capEl = doc.querySelector(".polaroid .cap");
@@ -139,9 +172,10 @@ export function applyCardToEngine(row) {
   }
 
   // Falling emojis: the sender's chosen set (content.emojis), else the engine
-  // default. window.__applyEmojis swaps the set and preloads the Apple images.
+  // default. Validated to real emoji first (safeEmojis): the row is untrusted.
+  // window.__applyEmojis swaps the set and preloads the Apple images.
   try {
-    const emojis = Array.isArray(content.emojis) ? content.emojis.filter(Boolean) : [];
+    const emojis = safeEmojis(content.emojis);
     if (typeof window !== "undefined") {
       window.CARD_EMOJIS = emojis;
       if (emojis.length && window.__applyEmojis) window.__applyEmojis(emojis);

@@ -26,27 +26,55 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Generate shared/config.js at deploy time from repository Variables.
-      # config.js is gitignored (never in git history); these are all PUBLIC
-      # client keys by design (Supabase anon/publishable, PostHog phc_). Set them
-      # under Settings -> Secrets and variables -> Actions -> Variables:
-      #   SUPABASE_URL, SUPABASE_ANON_KEY, POSTHOG_KEY, POSTHOG_HOST
+      # Supabase URL and anon key are required; a card site without them is
+      # silently broken (no cards load). Set them under Settings -> Secrets and
+      # variables -> Actions -> Variables. All four are PUBLIC client keys by
+      # design (Supabase anon/publishable, PostHog phc_). PostHog is optional;
+      # analytics degrades gracefully when empty.
+      - name: Require Supabase repository variables
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          fail=0
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::Repository variable SUPABASE_URL is not set. Add it under Settings -> Secrets and variables -> Actions -> Variables."
+            fail=1
+          fi
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Repository variable SUPABASE_ANON_KEY is not set. Add it under Settings -> Secrets and variables -> Actions -> Variables."
+            fail=1
+          fi
+          if [ "$fail" -ne 0 ]; then
+            echo "Refusing to deploy a broken site (empty Supabase config)."
+            exit 1
+          fi
+          echo "Supabase variables present. POSTHOG_KEY set: ${{ vars.POSTHOG_KEY != '' }} (optional)."
+
+      # Only these files are public. Internal material (docs/, research/,
+      # .planning/, HANDOFF.md, tests/, supabase/) stays out of the artifact.
+      - name: Stage site files
+        run: |
+          mkdir -p _site
+          cp index.html card.html maker.html rachel.html photo.jpg og-card.png _site/
+          cp -R demo _site/demo
+          cp -R shared _site/shared
+          rm -f _site/shared/config.example.js
+          # GitHub Pages serves 404.html for unknown paths like /c/<token>/,
+          # so the card page doubles as the catch-all route.
+          cp _site/card.html _site/404.html
+
+      # shared/config.js is gitignored; generate it at deploy time from
+      # repository Variables, matching shared/config.example.js exports.
       - name: Write client config from repository variables
         run: |
-          mkdir -p shared
-          cat > shared/config.js <<EOF
+          cat > _site/shared/config.js <<EOF
           // GENERATED AT DEPLOY from repository Variables. Public client keys only.
           export const SUPABASE_URL = "${{ vars.SUPABASE_URL }}";
           export const SUPABASE_ANON_KEY = "${{ vars.SUPABASE_ANON_KEY }}";
           export const POSTHOG_KEY = "${{ vars.POSTHOG_KEY }}";
           export const POSTHOG_HOST = "${{ vars.POSTHOG_HOST }}";
           EOF
-          # upload-pages-artifact honors .gitignore, which lists shared/config.js,
-          # so the generated file would be excluded from the published site. Drop
-          # that one line for THIS build only (the runner's checkout; the committed
-          # .gitignore is never changed).
-          sed -i.bak '/shared\/config\.js/d' .gitignore && rm -f .gitignore.bak
-          echo "Wrote shared/config.js (SUPABASE_URL set: ${{ vars.SUPABASE_URL != '' }}, POSTHOG_KEY set: ${{ vars.POSTHOG_KEY != '' }})"
 
       # Turns GitHub Pages on for this repo (source = GitHub Actions)
       # so no manual settings change is needed.
@@ -58,7 +86,7 @@ jobs:
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment

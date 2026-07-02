@@ -84,6 +84,10 @@ export async function downscalePhoto(file) {
     if (!ctx) {
       throw new PhotoError("encode", "Canvas 2D context unavailable.");
     }
+    // JPEG has no alpha channel: without this fill, a transparent PNG's clear
+    // pixels re-encode as black. Paint white first so transparency stays paper.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, outW, outH);
     ctx.drawImage(bitmap, 0, 0, outW, outH);
 
     const blob = await canvasToJpegBlob(canvas);

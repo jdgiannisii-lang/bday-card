@@ -1,3 +1,21 @@
+# Status update (2026-07-01)
+
+This document predates the product pivot and parts of it are stale. It is kept
+as-is for history. Read it with these corrections in mind:
+
+- The "PENDING TASK: tap-to-open present" at the bottom was built and then
+  intentionally removed (commit `67fe2ac`, "Remove the tap-to-open present").
+  Do not rebuild it from this doc.
+- GitHub Pages hosting is no longer pending; it is configured via
+  `.github/workflows/deploy-pages.yml`.
+- The card this document describes now lives at `rachel.html`. The root
+  `index.html` is a landing page / effects showcase, `maker.html` is the card
+  maker, and `card.html` is the recipient view.
+
+Everything below is the original handoff, untouched.
+
+---
+
 # HANDOFF: Rachel's Birthday Card
 
 Context-compaction for the next session. Read this first.

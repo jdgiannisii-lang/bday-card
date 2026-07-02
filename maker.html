@@ -5,9 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Make a card</title>
 
+<!-- Fonts load async so the form paints without waiting on fonts.googleapis.com. -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap"
+      rel="stylesheet" media="print" onload="this.media='all'" />
+<noscript>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
+</noscript>
 
 <style>
   /* Tokens inherited verbatim from index.html :root. No new hex values. */
@@ -201,7 +206,7 @@
 
       <div class="field">
         <label class="lbl" for="signoff">How you sign it</label>
-        <input type="text" id="signoff" name="signoff" placeholder="With love, JD" maxlength="60" />
+        <input type="text" id="signoff" name="signoff" placeholder="With love, Alex" maxlength="60" />
       </div>
 
       <div class="field">
@@ -248,7 +253,7 @@
 
       <div class="field consent">
         <input type="checkbox" id="consent" />
-        <label for="consent">I have permission to use this photo, and I understand this is an early experiment.</label>
+        <label for="consent">I have permission to share any photos I added, and I understand this is an early experiment.</label>
       </div>
 
       <button type="submit" class="submit" id="submitBtn" disabled>Get my link</button>
@@ -277,9 +282,26 @@
   </div>
 
 <script type="module">
-  import { saveCard } from "./shared/supabase.js";
-  import { initAnalytics, track } from "./shared/analytics.js";
-  import { downscalePhoto, PhotoError } from "./shared/photo.js";
+  // Dynamic, guarded imports. With static imports a single missing module (a
+  // deploy without shared/config.js) kills this whole script at parse time; the
+  // submit button then sits disabled forever with no explanation. Load the data
+  // layer first and tell the sender plainly if it is broken.
+  let saveCard, downscalePhoto, PhotoError;
+  let initAnalytics = () => Promise.resolve();
+  let track = () => {};
+  try {
+    ({ saveCard } = await import("./shared/supabase.js"));
+    ({ downscalePhoto, PhotoError } = await import("./shared/photo.js"));
+  } catch (err) {
+    const errEl = document.getElementById("err-save");
+    if (errEl) errEl.textContent = "The maker is not set up yet (missing shared/config.js). See the README for setup.";
+    const btn = document.getElementById("submitBtn");
+    if (btn) btn.disabled = true;
+    throw err; // stop here; the form cannot save without the data layer
+  }
+  try {
+    ({ initAnalytics, track } = await import("./shared/analytics.js"));
+  } catch (err) { /* analytics is optional; the maker works without it */ }
 
   // QR for the share state. Major pinned, ESM from the CDN to match the no-build
   // approach (research Standard Stack). Loaded lazily so the form paints without
@@ -302,8 +324,11 @@
   // is the spawning card (the ref), so a maker_opened arriving from a real card
   // ties back to the card that recruited this sender. Fire and forget; a missing
   // PostHog key degrades to no analytics, never a broken form.
-  initAnalytics({ cardId: refCardId || "direct", generation: generation, reduceMotion: false });
-  track("maker_opened", { referred: !!refCardId });
+  // Fire maker_opened only AFTER analytics is ready: initAnalytics lazy-loads
+  // posthog, and a synchronous track() here would no-op against the not-yet-set
+  // window.posthog, silently zeroing the maker side of the funnel.
+  initAnalytics({ cardId: refCardId || "direct", generation: generation, reduceMotion: false })
+    .then(() => track("maker_opened", { referred: !!refCardId }));
 
   const form = document.getElementById("makerForm");
   const photoInput = document.getElementById("photo");
@@ -377,10 +402,23 @@
 
   // Each slot keeps only the last emoji typed (so it always holds one), and a
   // manual edit means the set is no longer a named preset, so deselect the chips.
+  // Segment by grapheme so multi-codepoint emoji survive intact: a bare
+  // Extended_Pictographic match would collapse a ZWJ family to its last member
+  // and strip the VS16 off a red heart.
+  function lastEmoji(str) {
+    let clusters;
+    if (typeof Intl !== "undefined" && Intl.Segmenter) {
+      const seg = new Intl.Segmenter("en", { granularity: "grapheme" });
+      clusters = Array.from(seg.segment(str), (x) => x.segment);
+    } else {
+      clusters = str.match(/\p{Extended_Pictographic}\ufe0f?/gu) || [];
+    }
+    const emo = clusters.filter((c) => /\p{Extended_Pictographic}/u.test(c));
+    return emo.length ? emo[emo.length - 1] : "";
+  }
   slotEls.forEach((s) => {
     s.addEventListener("input", () => {
-      const picked = s.value.match(/\p{Extended_Pictographic}/gu);
-      s.value = picked && picked.length ? picked[picked.length - 1] : "";
+      s.value = lastEmoji(s.value);
       emojiChips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
     });
   });
@@ -481,7 +519,7 @@
     making.textContent = "Making your link...";
 
     const result = await saveCard({
-      recipientName, message, signoff,
+      recipientName, message, signoff, whoSentYou,
       occasion, effect, emojis: chosenEmojis,
       photoBlobs: photoBlobs.map((p) => p.blob),
       refCardId, generation,
@@ -500,7 +538,12 @@
     // tracked ref to a gen >= 1 card, is a candidate propagation event (the
     // ledger verifies it; PostHog corroborates). occasion/effect are descriptive.
     track("card_created", {
-      token: result.token,
+      // NEVER the full token: it is the sole capability to open the card, and
+      // anyone with PostHog access could read every card. The first 8 chars are
+      // enough to join against the ledger while leaving the remaining entropy
+      // unguessable. who_sent_you (free-text PII) stays in the row only; the
+      // event carries just whether it was filled in.
+      token_prefix: result.token.slice(0, 8),
       generation: generation,
       ref_card_id: refCardId,
       referred: !!refCardId,
@@ -509,9 +552,7 @@
       has_photo: photoBlobs.length > 0,
       photo_count: photoBlobs.length,
       emoji_count: chosenEmojis.length,
-      // Soft propagation evidence for the ledger (Stage 0 spec 5.2). Self-report
-      // only; the ledger verifies real edges, PostHog corroborates.
-      who_sent_you: whoSentYou || null,
+      has_who_sent_you: !!whoSentYou,
     });
 
     shareLink.value = result.url;
@@ -544,7 +585,9 @@
     setTimeout(() => { copyBtn.textContent = original; copyBtn.style.color = ""; }, 1500);
   });
 
-  makeAnother.addEventListener("click", () => { location.href = location.pathname; });
+  // Keep ?ref and ?g: a referred sender's second card is still part of the same
+  // chain, and reloading the bare path would misattribute it as direct, gen 0.
+  makeAnother.addEventListener("click", () => { location.href = location.pathname + location.search; });
 </script>
 </body>
 </html>

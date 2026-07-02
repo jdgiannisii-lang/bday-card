@@ -5,12 +5,16 @@
 **Birthday Card App**
 
 A build-your-own animated greeting-card web app. A sender hand-crafts a tasteful,
-non-templated animated card (a `<canvas>` particle/effect engine — not cheesy
+non-templated animated card (a `<canvas>` particle/effect engine - not cheesy
 template/AI slop) and shares it as a link/QR. The recipient opens it in any
 browser with **zero friction** (no signup, no install, ever), and can become a
 sender in the same session. Beachhead: long-distance couples **and** college
-students sending to family. Today it exists as a single polished `index.html`;
-this project turns it into the real product.
+students sending to family. Today it is a small multi-page product:
+`index.html` is the landing page / effects showcase, `maker.html` is the
+no-signup card maker (Supabase-backed), `card.html` is the recipient view
+(shared as `card.html?c=<token>`; `404.html` is generated at deploy as a copy
+of `card.html` for clean `/c/<token>/` links), and `rachel.html` is the
+original hand-made card that started the project (kept live).
 
 **Core Value:** The recipient's open is sacred: a beautiful card that plays instantly in any
 browser with zero friction, where every recipient can become a sender in the
@@ -18,10 +22,10 @@ same session (the viral loop). If everything else fails, that must work.
 
 ### Constraints
 
-- **Team**: Solo founder — velocity is the scarcest resource; prefer the known stack (React + Supabase) and managed/free tiers.
+- **Team**: Solo founder - velocity is the scarcest resource; prefer the known stack (React + Supabase) and managed/free tiers.
 - **Tech stack**: Web-first, one codebase, edge-served; recipient view must paint with zero blocking network calls and require no auth.
 - **Budget**: Marginal cost per card ≈ $0 (deterministic canvas, free sends fuel the loop). Real pre-public infra floor ≈ $50–80/mo (Supabase Pro backups + Resend Pro + moderation), not $0.
-- **Content rule**: ZERO em-dashes in card content (HANDOFF.md — the #1 AI tell; validated by grep). Hold the taste line: handcrafted, never cheesy.
+- **Content rule**: ZERO em-dashes in card content (HANDOFF.md - the #1 AI tell; validated by grep). Hold the taste line: handcrafted, never cheesy.
 - **Legal**: User-uploaded photos + anonymous sends → image moderation + CSAM reporting (18 USC 2258A) are mandatory before public traffic, not optional.
 - **Sequencing**: Each stage is a gate, not a date. Don't build Stage 1 until Stage 0's K-factor clears a pre-committed threshold.
 
@@ -41,7 +45,7 @@ same session (the viral loop). If everything else fails, that must work.
 
 - Browser (all modern browsers: Chrome, Safari, Firefox, Edge)
 - No server-side runtime required
-- None — zero external dependencies
+- None - zero external dependencies
 
 ## Frameworks
 
@@ -51,7 +55,7 @@ same session (the viral loop). If everything else fails, that must work.
 - CSS3 Keyframes (`@keyframes`)
 - requestAnimationFrame for 60fps canvas rendering
 - GPU-accelerated transforms (3D perspective, rotations)
-- None — single-file deployment, no build step required
+- None - static HTML pages served as-is, no build step (`404.html` is generated at deploy as a copy of `card.html`)
 
 ## Key Dependencies
 
@@ -65,22 +69,22 @@ same session (the viral loop). If everything else fails, that must work.
 
 ## Configuration
 
-- No environment variables required
-- No config files needed
-- Client-side only, no secrets or credentials
-- None — file is served as-is
-- Single `index.html` contains all HTML, CSS (inline `<style>`), and JS (inline `<script>`)
-- Static assets: `photo.jpg` (couple's photo, ~353K)
+- Client config lives in `shared/config.js` (gitignored). For local work, copy `shared/config.example.js` to `shared/config.js` and fill in the Supabase values. At deploy, the Pages workflow generates it from repo Variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `POSTHOG_KEY`, `POSTHOG_HOST`).
+- Every key in that config is public by design (Supabase anon key, PostHog `phc_` key); RLS is the real access control. NEVER put the service_role key there.
+- No secrets or credentials in the repo; client-side only.
+- Files are served as-is (no build step); the only deploy-time artifacts are `shared/config.js` (generated from repo Variables) and `404.html` (a copy of `card.html`).
+- Each page is self-contained HTML with inline CSS/JS, importing the ES modules in `shared/`
+- Static assets: `photo.jpg` (couple's photo, ~353K), `og-card.png` (link preview image)
 
 ## Platform Requirements
 
 - Text editor (any)
 - Python 3.x for local HTTP server (optional): `python3 -m http.server 8000`
 - Node.js (optional) for validation script only (see HANDOFF.md)
-- Static file hosting only (GitHub Pages, Netlify, Vercel, or any CDN)
-- No server, database, or build pipeline required
+- Static file hosting only (GitHub Pages, Netlify, Vercel, or any CDN); Supabase (managed free tier) is the only backend
+- No build pipeline; files deploy as-is (`404.html` and `shared/config.js` are generated at deploy by the Pages workflow)
 - HTTPS recommended (GitHub Pages provides this by default)
-- Modern browsers with CSS 3D Transforms support (Chrome, Safari, Firefox, Edge — all recent versions)
+- Modern browsers with CSS 3D Transforms support (Chrome, Safari, Firefox, Edge - all recent versions)
 - Graceful degradation: reduced-motion media query respects accessibility preferences
 - Responsive: works on desktop, tablet, mobile (iPhone portrait priority per design)
 
@@ -103,9 +107,9 @@ same session (the viral loop). If everything else fails, that must work.
 
 ### Personalization Markers
 
-- `✏️ HER NAME` — greeting recipient name
-- `✏️ PHOTO` — polaroid `<img src>` path
-- `✏️ MESSAGE GOES HERE` — handwritten note body
+- `✏️ HER NAME` - greeting recipient name
+- `✏️ PHOTO` - polaroid `<img src>` path
+- `✏️ MESSAGE GOES HERE` - handwritten note body
 
 ## Naming Patterns
 
@@ -118,21 +122,21 @@ same session (the viral loop). If everything else fails, that must work.
 
 ### CSS Classes & Custom Properties
 
-- `.stage` — perspective viewport
-- `.card` — 3D card container (preserve-3d)
-- `.face` — individual 3D panel (inside, cover, cover-back)
-- `.inside` — note side (hidden until opened)
-- `.inside-scroll` — scrollable note area
-- `.cover` — front flap (swings open on rotateY)
-- `.cover-back` — back of cover (glimpsed during swing)
-- `.polaroid` — taped photo
-- `.greeting` — "Happy Birthday, Rachel!" heading
-- `.note` — handwritten message (Caveat font, ragged-left)
-- `.signoff` — "With immeasurable love, JD" + emoji
-- `.seal` — wax seal button on cover (animated breathe)
-- `.replay` — "read it again" button (hidden until card opens)
-- `.scroll-fade` — bottom gradient fade (opacity 0 by default)
-- `.scroll-cue` — "keep reading" affordance text + arrow
+- `.stage` - perspective viewport
+- `.card` - 3D card container (preserve-3d)
+- `.face` - individual 3D panel (inside, cover, cover-back)
+- `.inside` - note side (hidden until opened)
+- `.inside-scroll` - scrollable note area
+- `.cover` - front flap (swings open on rotateY)
+- `.cover-back` - back of cover (glimpsed during swing)
+- `.polaroid` - taped photo
+- `.greeting` - "Happy Birthday, Rachel!" heading
+- `.note` - handwritten message (Caveat font, ragged-left)
+- `.signoff` - "With immeasurable love, JD" + emoji
+- `.seal` - wax seal button on cover (animated breathe)
+- `.replay` - "read it again" button (hidden until card opens)
+- `.scroll-fade` - bottom gradient fade (opacity 0 by default)
+- `.scroll-cue` - "keep reading" affordance text + arrow
 - Modifiers: `.opened`, `.has-more`, `.read`, `.show` (added/removed by JS)
 - `.seal` has `.animation: breathe` idle; pauses on `.card:hover`
 - `.cover` transitions on `rotateY` open
@@ -140,21 +144,21 @@ same session (the viral loop). If everything else fails, that must work.
 
 ### JavaScript
 
-- `reduceMotion` — boolean flag from `prefers-reduced-motion` media query
-- `CONFIG` — object of particle counts: `{ hearts, petals, confetti, foil, ambientPetals }`
-- `particles` — array of active burst/confetti objects
-- `emojiBalls` — array of physics-simulated emoji glyphs
-- `EMOJIS` — constant array of emoji chars: `["🥰", "🫰", "❤️", "🫶", "🖖", "💌"]`
-- `isOpen` — card state
-- `openCard()`, `resetCard()`, `startLoop()`, `tick()` — main event handlers + animation loop
+- `reduceMotion` - boolean flag from `prefers-reduced-motion` media query
+- `CONFIG` - object of particle counts: `{ hearts, petals, confetti, foil, ambientPetals }`
+- `particles` - array of active burst/confetti objects
+- `emojiBalls` - array of physics-simulated emoji glyphs
+- `EMOJIS` - constant array of emoji chars: `["🥰", "🫰", "❤️", "🫶", "🖖", "💌"]`
+- `isOpen` - card state
+- `openCard()`, `resetCard()`, `startLoop()`, `tick()` - main event handlers + animation loop
 - `var CONFIG = { hearts: 34, petals: 22, confetti: 78, foil: 26, ambientPetals: 9 }` (line ~574)
-- `var count = 37` for emoji pile spawn (line ~689) — tuned by user for visual balance
+- `var count = 37` for emoji pile spawn (line ~689) - tuned by user for visual balance
 - Emoji collision radius: `cR = vR * 1.18` (hitbox slightly larger than glyph visual radius, so they rest with a gap)
 - Ball sleep threshold: `b.still > 12` (velocity drops below 0.25 for 12+ frames → immovable)
-- `card.addEventListener("click", openCard)` — main interaction
-- `card.addEventListener("keydown", ...)` — keyboard a11y (Enter/Space)
-- `replay.addEventListener("click", resetCard)` — close + reset state
-- `scroller.addEventListener("scroll", atBottom)` — scroll affordance tracking
+- `card.addEventListener("click", openCard)` - main interaction
+- `card.addEventListener("keydown", ...)` - keyboard a11y (Enter/Space)
+- `replay.addEventListener("click", resetCard)` - close + reset state
+- `scroller.addEventListener("scroll", atBottom)` - scroll affordance tracking
 
 ## Code Style
 
@@ -176,7 +180,7 @@ same session (the viral loop). If everything else fails, that must work.
 - No external script tags (fonts loaded via `<link>` from Google Fonts CDN)
 - No image dependencies except `photo.jpg` (the couple's photo)
 - No CSS frameworks or utility libraries
-- No icon fonts — all graphics are CSS (gradients, SVG paths inline)
+- No icon fonts - all graphics are CSS (gradients, SVG paths inline)
 
 ## Animations & Transitions
 
@@ -226,20 +230,20 @@ same session (the viral loop). If everything else fails, that must work.
 
 ### Size
 
-- `updateEmoji()` (~65 lines) — physics simulation with nested collision loops
-- `tick()` (~65 lines) — animation frame callback, updates all particles + emoji, draws
+- `updateEmoji()` (~65 lines) - physics simulation with nested collision loops
+- `tick()` (~65 lines) - animation frame callback, updates all particles + emoji, draws
 
 ### Parameters
 
-- `burst()` — no params, uses closure vars (W, H, ox, oy, CONFIG)
-- `openCard()` — no params, manipulates DOM directly
-- `atBottom()` — no params, checks `.inside-scroll` position
+- `burst()` - no params, uses closure vars (W, H, ox, oy, CONFIG)
+- `openCard()` - no params, manipulates DOM directly
+- `atBottom()` - no params, checks `.inside-scroll` position
 
 ### Return Values
 
-- `atBottom()` — implicit (side effect: adds/removes `.read` class)
-- `updateEmoji()` — returns `awake` (bool, whether any emoji still moving)
-- `rand(a, b)`, `pick(a)` — return number/element (utilities)
+- `atBottom()` - implicit (side effect: adds/removes `.read` class)
+- `updateEmoji()` - returns `awake` (bool, whether any emoji still moving)
+- `rand(a, b)`, `pick(a)` - return number/element (utilities)
 
 ## Module Design
 
@@ -451,4 +455,4 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 
 ## UI Verification (project rule)
 
-**Any UI/UX built or changed in this repo MUST be verified with Playwright before it's considered done** — render the page, screenshot each surface, and exercise the core flow (for Phase 1: create card → get link/QR → open `/c/<token>/` and watch it play → tap "Make one for someone you love" → land back in the maker). Fix anything that looks or behaves wrong. Do not rely on "the code looks right." The `claude-in-chrome` extension is not connected here — use the local/global Playwright install. This applies to every frontend phase (the maker form, the card view, the share state, the CTA reveal).
+**Any UI/UX built or changed in this repo MUST be verified with Playwright before it's considered done** - render the page, screenshot each surface, and exercise the core flow (for Phase 1: create card → get link/QR → open `/c/<token>/` and watch it play → tap "Make one for someone you love" → land back in the maker). Fix anything that looks or behaves wrong. Do not rely on "the code looks right." The `claude-in-chrome` extension is not connected here - use the local/global Playwright install. This applies to every frontend phase (the maker form, the card view, the share state, the CTA reveal).

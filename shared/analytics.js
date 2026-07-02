@@ -31,13 +31,13 @@ const DWELL_THRESHOLD_MS = 8000;
 // no cross load persistence by design).
 let _engagedFired = false; // card_engaged fires at most once per session (Pitfall 5)
 let _reduceMotion = false; // reduced motion sessions are EXCLUDED from the engaged denominator (D-02)
-let _inited = false; // initAnalytics ran (whether or not PostHog actually loaded)
 
 // Visible dwell accumulator. We sum only the time the page was actually visible,
 // so backgrounding the tab pauses the clock (the >=8s must be 8s of VISIBLE time).
 let _dwellMs = 0; // cumulative visible milliseconds
 let _dwellSince = 0; // timestamp the current visible stretch began (0 = clock paused)
 let _dwellTimer = null; // setTimeout id for the threshold check while visible
+let _dwellArmed = false; // startDwellTimer ran (the card was actually opened)
 
 function _now() {
   return typeof performance !== "undefined" && performance.now
@@ -59,7 +59,6 @@ function _keyIsReal(key) {
 export async function initAnalytics(opts) {
   const o = opts || {};
   _reduceMotion = !!o.reduceMotion;
-  _inited = true;
 
   // No real key: analytics stays off. The card still opens and plays.
   if (!_keyIsReal(POSTHOG_KEY)) return;
@@ -168,6 +167,7 @@ function _scheduleDwellCheck() {
 //   Reduced motion sessions never arm the clock (they are excluded anyway).
 export function startDwellTimer() {
   if (_reduceMotion || _engagedFired) return;
+  _dwellArmed = true;
   // Begin a visible stretch now (the card view starts visible on open).
   if (!_dwellSince) _dwellSince = _now();
   _scheduleDwellCheck();
@@ -189,8 +189,27 @@ export function pauseDwell() {
 // resumeDwell()
 //   The card view forwards a visibilitychange back to visible here. Restarts the
 //   clock and reschedules the threshold check against the already banked time.
+//   Only acts once startDwellTimer armed the clock: the card view forwards EVERY
+//   visibilitychange, and without this gate a recipient who backgrounds the tab
+//   on the closed cover and comes back would start accruing dwell (and fire
+//   card_engaged) without ever opening the card.
 export function resumeDwell() {
-  if (_engagedFired || _reduceMotion) return;
+  if (!_dwellArmed || _engagedFired || _reduceMotion) return;
   if (!_dwellSince) _dwellSince = _now();
   _scheduleDwellCheck();
+}
+
+// setGeneration(g)
+//   Re-registers the generation super property once the card row arrives. Share
+//   links carry no ?g=, so the URL-derived generation is 0 for every shared open;
+//   the row's stored generation is the truth. Updating the super prop here keeps
+//   card_opened / card_engaged / cta_clicked attributable to the right depth.
+export function setGeneration(g) {
+  try {
+    if (typeof window !== "undefined" && window.posthog && Number.isFinite(g)) {
+      window.posthog.register({ generation: g });
+    }
+  } catch (err) {
+    // Never let analytics break the open.
+  }
 }
