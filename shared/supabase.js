@@ -106,6 +106,9 @@ export async function saveCard(formData) {
       recipientName: data.recipientName || "",
       message,
       signoff: data.signoff || "",
+      // Optional handwritten caption under the polaroid (the bridge renders
+      // content.caption as textContent, never markup). Trimmed and capped.
+      caption: String(data.caption || "").trim().slice(0, 80),
       photos: photo_urls,
       emojis: Array.isArray(data.emojis) ? data.emojis.filter(Boolean).slice(0, 8) : [],
       // Sender-picked theme, validated against the same allowlist the card
@@ -188,6 +191,56 @@ export async function getCardByToken(token) {
     if (rpc.error) return null;
     const rows = Array.isArray(rpc.data) ? rpc.data : (rpc.data ? [rpc.data] : []);
     return rows.length ? rows[0] : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+// The closed set of reaction kinds. Mirrors the check constraint and the
+// "public react" policy in migration 0004; anything else is rejected locally
+// before it ever costs a network round trip.
+const REACTION_KINDS = ["heart", "tears", "party", "hug"];
+
+// saveReaction(token, kind)
+//   Records one anonymous reaction (the recipient sending a little love back).
+//   The table is append only: anon can insert but never read it, so a reaction
+//   cannot leak who else reacted. Validates kind and token shape locally (the
+//   RLS policy re-checks server side). Returns { ok: true } on success or
+//   { error } rather than throwing, so the card view can fire and forget.
+export async function saveReaction(token, kind) {
+  try {
+    const t = typeof token === "string" ? token : "";
+    if (t.length < 15 || t.length > 40) return { error: new Error("bad token") };
+    if (REACTION_KINDS.indexOf(kind) === -1) return { error: new Error("bad kind") };
+    const client = await getClient();
+    const ins = await client.from("reactions").insert({ card_token: t, kind });
+    if (ins.error) return { error: ins.error };
+    return { ok: true };
+  } catch (err) {
+    return { error: err };
+  }
+}
+
+// getReactionCounts(token)
+//   Reads the per-kind totals for a card through get_reactions (the SECURITY
+//   DEFINER aggregate from migration 0004; anon holds no SELECT on the table).
+//   Returns { counts } on success, where counts maps kind to a number and is
+//   simply empty when nobody has reacted yet, and null ONLY on error (missing
+//   table, missing RPC, network). The card view leans on that difference as
+//   its feature probe: null hides the reaction pill entirely, so a database
+//   that never ran 0004 serves cards exactly as before.
+export async function getReactionCounts(token) {
+  try {
+    if (!token) return null;
+    const client = await getClient();
+    const rpc = await client.rpc("get_reactions", { p_token: token });
+    if (rpc.error) return null;
+    const rows = Array.isArray(rpc.data) ? rpc.data : [];
+    const counts = {};
+    for (const row of rows) {
+      if (row && typeof row.kind === "string") counts[row.kind] = Number(row.n) || 0;
+    }
+    return { counts };
   } catch (err) {
     return null;
   }

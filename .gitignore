@@ -8,3 +8,6 @@ tests/screenshots/
 # OS / editor noise
 .DS_Store
 Thumbs.db
+
+# Playwright MCP debris (browser session logs, never committed).
+.playwright-mcp/

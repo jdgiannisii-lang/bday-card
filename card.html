@@ -175,7 +175,7 @@
     cursor: pointer;
     transition: transform 1s cubic-bezier(.22,.7,.18,1);
     transform: rotateX(6deg) rotateZ(-.6deg);
-    animation: settle 1.1s cubic-bezier(.2,.8,.2,1) both, eager 5s ease-in-out 1.1s infinite;
+    animation: settle 1.1s cubic-bezier(.2,.8,.2,1) both, eager 6s ease-in-out 1.1s infinite;
     will-change: transform;
   }
   @keyframes settle {
@@ -184,11 +184,11 @@
   }
   @keyframes eager {
     0%, 64%, 100% { transform: rotateX(6deg) rotateZ(-.6deg) translate(0, 0); }
-    32%           { transform: rotateX(6deg) rotateZ(-.6deg) translate(0, -6px); }
-    70%           { transform: rotateX(6deg) rotateZ(-2deg)  translate(-2px, 0); }
-    74%           { transform: rotateX(6deg) rotateZ(1.2deg) translate(2px, 0); }
-    78%           { transform: rotateX(6deg) rotateZ(-1.4deg) translate(-2px, 0); }
-    82%           { transform: rotateX(6deg) rotateZ(.8deg)  translate(1px, 0); }
+    32%           { transform: rotateX(6deg) rotateZ(-.6deg) translate(0, -4px); }
+    70%           { transform: rotateX(6deg) rotateZ(-1.1deg) translate(-1px, 0); }
+    74%           { transform: rotateX(6deg) rotateZ(.8deg) translate(1px, 0); }
+    78%           { transform: rotateX(6deg) rotateZ(-.7deg) translate(-1px, 0); }
+    82%           { transform: rotateX(6deg) rotateZ(.5deg)  translate(1px, 0); }
     86%           { transform: rotateX(6deg) rotateZ(-.6deg) translate(0, 0); }
   }
 
@@ -633,6 +633,71 @@
     font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive; font-size: 15px; color: var(--ink-soft);
   }
 
+  /* Surface D: send a little back. One anonymous tap; same paper-pill language
+     as .replay. It sits above the CTA in the bottom stack and stays invisible
+     unless the reactions probe answers (a database without migration 0004
+     never shows a dead control). */
+  .reactions {
+    position: fixed;
+    bottom: 160px; left: 50%;
+    transform: translateX(-50%) translateY(14px);
+    z-index: 60;
+    width: max-content;
+    max-width: min(94vw, 380px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid color-mix(in srgb, var(--foil-mid) 42%, transparent);
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(var(--shadow),.18);
+    opacity: 0; pointer-events: none;
+    transition: opacity .5s, transform .5s;
+    padding: 5px 14px 6px;
+  }
+  .reactions.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .reactions-label {
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive;
+    font-size: 15px;
+    color: var(--ink-soft);
+    padding-right: 2px;
+    white-space: nowrap;
+  }
+  .reactions.sent .reactions-label { color: var(--accent-deep); }
+  .reactions button {
+    width: 30px; height: 30px;
+    display: grid; place-items: center;
+    border: 0; padding: 0;
+    background: transparent;
+    border-radius: 50%;
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+    font-size: 19px; line-height: 1;
+    cursor: pointer;
+    transition: transform .18s;
+  }
+  .reactions button img { width: 22px; height: 22px; display: block; }
+  .reactions button:hover:not(:disabled) { transform: scale(1.15); }
+  .reactions button:disabled { opacity: .45; cursor: default; }
+  .reactions-count {
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    padding-left: 2px;
+    white-space: nowrap;
+  }
+  .reactions-count:empty { display: none; }
+  @media (max-width: 580px) and (max-height: 700px) {
+    /* Short phones: compact the bottom stack so three pills fit under the
+       card (cta one slim line at the very bottom, replay above it, reactions
+       on top). */
+    .cta { bottom: 10px; padding: 7px 18px 9px; }
+    .cta .cta-sub { display: none; }
+    .replay { bottom: 72px; }
+    .reactions { bottom: 122px; }
+  }
+
   /* Soft retry message if the card fetch fails (paused project, offline).
      It floats top center, clear of the replay and CTA pills that own the
      bottom center once the card opens (they overlapped when it sat there). */
@@ -680,6 +745,8 @@
     .signoff { align-self: flex-end; }
     .cta { transition: none; }
     .replay { transition: none; }
+    .reactions { transition: none; }
+    .reactions button { transition: none; }
     .photostrip-reveal { transition: none; }
     .photostrip-reveal.rolled .photostrip { animation: none; }
     .photostrip { transform: rotate(-1deg); }
@@ -748,6 +815,17 @@
   <div class="cta" id="cta">
     <a href="maker.html" id="ctaLink">Make one for someone you love&nbsp;&#8594;</a>
     <span class="cta-sub">It's free, and it takes a minute.</span>
+  </div>
+  <!-- Ships hidden: the module script reveals it only when the reactions
+       probe answers (migration 0004 applied), so older databases never show
+       a dead control. -->
+  <div class="reactions" id="reactions">
+    <span class="reactions-label" id="reactionsLabel">send a little back</span>
+    <button type="button" data-kind="heart" aria-label="Send a heart back">❤️</button>
+    <button type="button" data-kind="tears" aria-label="Send happy tears back">🥹</button>
+    <button type="button" data-kind="party" aria-label="Send a celebration back">🎉</button>
+    <button type="button" data-kind="hug" aria-label="Send a hug back">🫂</button>
+    <span class="reactions-count" id="reactionsCount"></span>
   </div>
   <div class="retry" id="retry">This card is taking a moment. Tap to try again.</div>
 
@@ -987,6 +1065,29 @@
     }
     startLoop();
   }
+
+  /* A small reaction burst: the card view calls this when a recipient sends
+     love back, so the tap has a moment of its own without replaying the whole
+     celebration. A handful of hearts and confetti lift from just above the
+     reaction pill and fall away quickly. */
+  window.__miniBurst = function (kind) {
+    if (reduceMotion) return;
+    var ox = W / 2, oy = H - 150;
+    var i;
+    for (i = 0; i < 8; i++) {
+      particles.push({ kind: "heart", x: ox, y: oy,
+        vx: rand(-3, 3), vy: rand(-7, -3), g: rand(.12, .2),
+        size: rand(7, 13), rot: rand(0, 6.28), vr: rand(-.16, .16),
+        color: pick(PALETTE.hearts), life: 1, decay: rand(.012, .02) });
+    }
+    for (i = 0; i < 6; i++) {
+      particles.push({ kind: "confetti", x: ox, y: oy,
+        vx: rand(-3, 3), vy: rand(-7, -3), g: rand(.12, .2),
+        w: rand(5, 9), h: rand(8, 14), rot: rand(0, 6.28), vr: rand(-.3, .3),
+        flutter: rand(0, 6.28), color: pick(PALETTE.confetti), life: 1, decay: rand(.012, .02) });
+    }
+    startLoop();
+  };
 
   /* Reduced motion still deserves a moment. Instead of the burst and its
      loop, paint one quiet scatter of shapes straight onto the canvas: a
@@ -1484,6 +1585,85 @@
     });
   }
 
+  // Surface D: the "send a little back" pill. Strictly additive: it wires up
+  // only when the get_reactions RPC answers (getReactionCounts returns null on
+  // any error), so a database that never ran migration 0004 serves the card
+  // exactly as before, with no dead control. One reaction per card per session
+  // (sessionStorage); the write is fire and forget because the local moment
+  // (the mini burst) has already played.
+  function wireReactions(token, getReactionCounts, saveReaction) {
+    var pill = document.getElementById("reactions");
+    if (!pill || !token || !getReactionCounts) return;
+    getReactionCounts(token).then(function (res) {
+      if (!res || !res.counts) return; // no table, no feature; the card is unchanged
+
+      // A quiet running total after the buttons ("· 3 sent back"). Empty rows
+      // mean nobody has reacted yet; the label alone is invitation enough.
+      var counts = res.counts;
+      var total = 0;
+      Object.keys(counts).forEach(function (k) { total += counts[k] || 0; });
+      var countEl = document.getElementById("reactionsCount");
+      if (countEl && total > 0) countEl.textContent = "· " + total + " sent back";
+
+      var label = document.getElementById("reactionsLabel");
+      var buttons = pill.querySelectorAll("button");
+
+      // The falling emojis ship Apple artwork so every platform sees the same
+      // set; the buttons get the same treatment (Windows 10 has no native
+      // glyph at all for the newer kinds). The text glyph only leaves the
+      // button once an image has actually loaded, so a failed fetch costs
+      // nothing. Self-hosted copy first, then the CORS-open CDN.
+      var ART = { heart: "2764-fe0f", tears: "1f979", party: "1f389", hug: "1fac2" };
+      var ART_CDN = "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/";
+      buttons.forEach(function (btn) {
+        var name = ART[btn.getAttribute("data-kind")];
+        if (!name) return;
+        var sources = ["assets/emoji/" + name + ".png", ART_CDN + name + ".png"];
+        var idx = 0;
+        var im = new Image();
+        im.alt = ""; // the button's aria-label already names the action
+        im.onload = function () { btn.textContent = ""; btn.appendChild(im); };
+        im.onerror = function () { idx++; if (idx < sources.length) im.src = sources[idx]; };
+        im.src = sources[0];
+      });
+
+      function markSent() {
+        pill.classList.add("sent");
+        if (label) label.textContent = "they'll feel it";
+        for (var i = 0; i < buttons.length; i++) buttons[i].disabled = true;
+      }
+
+      // A reload inside the same session keeps the pill in its sent state.
+      var storeKey = "reacted:" + token;
+      var already = null;
+      try { already = sessionStorage.getItem(storeKey); } catch (err) { /* storage may be blocked */ }
+      if (already) markSent();
+
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].addEventListener("click", function (e) {
+          if (pill.classList.contains("sent")) return;
+          var kind = e.currentTarget.getAttribute("data-kind");
+          if (!kind) return;
+          if (window.__miniBurst) window.__miniBurst(kind); // the local moment, first
+          if (saveReaction) saveReaction(token, kind); // fire and forget
+          A.track("reaction_sent", { kind: kind });
+          try { sessionStorage.setItem(storeKey, kind); } catch (err) { /* still sent for this view */ }
+          markSent();
+        });
+      }
+
+      // Reveal in step with the CTA: the engine adds .show to #cta 1500ms after
+      // the open, so mirroring its class keeps this pill on the same clock, and
+      // resetCard (which removes it) hides both for free.
+      var cta = document.getElementById("cta");
+      function sync() { pill.classList.toggle("show", !!(cta && cta.classList.contains("show"))); }
+      if (cta && typeof MutationObserver !== "undefined") {
+        new MutationObserver(sync).observe(cta, { attributes: true, attributeFilter: ["class"] });
+      }
+      sync();
+    });
+  }
+
   // The engaged signals (D-02). card_engaged is gated, deduped, and reduced
   // motion excluded inside shared/analytics.js; here we only forward the two real
   // engine hooks into it.
@@ -1545,6 +1725,8 @@
     // instead of leaving a permanently generic card with no explanation.
     var getCardByToken = null;
     var applyCardToEngine = null;
+    var getReactionCounts = null;
+    var saveReaction = null;
     var photoPrefixes = [];
     try {
       var dataMod = await import("./shared/supabase.js");
@@ -1552,6 +1734,8 @@
       var configMod = await import("./shared/config.js");
       getCardByToken = dataMod.getCardByToken;
       applyCardToEngine = bridgeMod.applyCardToEngine;
+      getReactionCounts = dataMod.getReactionCounts;
+      saveReaction = dataMod.saveReaction;
       // Only our own storage may serve card photos (the row is untrusted; anyone
       // holding the public anon key can insert one).
       if (configMod.SUPABASE_URL && configMod.SUPABASE_URL.indexOf("REPLACE_ME") === -1) {
@@ -1615,6 +1799,9 @@
     // on a shared link, so without this every referred card records as gen 1
     // forever and generation-depth analysis is flat.
     if (Number.isFinite(row.generation)) wireCta(token, row.generation);
+    // Reactions come last: the probe only runs once a real row has landed, so
+    // a missing card never grows a reaction pill.
+    wireReactions(token, getReactionCounts, saveReaction);
   }
 
   // Preview mode: the maker's "See it first" overlay embeds this page as
@@ -1628,6 +1815,10 @@
     document.documentElement.style.overflow = "hidden";
     var cta = document.getElementById("cta");
     if (cta) cta.style.display = "none";
+    // No reactions in preview either: there is no row to react to, and the
+    // sender reacting to their own draft would be noise.
+    var reactions = document.getElementById("reactions");
+    if (reactions) reactions.style.display = "none";
     var applyCardToEngine = null;
     try {
       var bridgeMod = await import("./shared/engine-bridge.js");

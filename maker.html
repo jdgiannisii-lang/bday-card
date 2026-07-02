@@ -316,6 +316,9 @@
     box-shadow: 0 10px 20px rgba(70,54,45,.22); margin-top: 32px;
   }
   .share h2 { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: clamp(26px, 7vw, 34px); margin: 0; line-height: 1.06; }
+  /* The mini cover above the share heading: the same .preview-card mock the
+     theme picker uses, centered with a little room before the heading. */
+  .share-card .preview-card { margin: 0 auto 18px; }
   .share p { color: var(--ink-soft); font-size: 16px; line-height: 1.5; }
   .link-row { display: flex; gap: 8px; margin-top: 16px; }
   .link-row input { flex: 1; }
@@ -422,6 +425,15 @@
         <div class="thumbs" id="thumbs" aria-live="polite"></div>
         <div class="photo-removed" id="photoRemoved" aria-live="polite"></div>
         <div class="err" id="err-photo"></div>
+      </div>
+
+      <!-- Handwritten line under a single polaroid. The strip has no caption,
+           so this shows only at exactly one photo (syncDropzone toggles it);
+           whatever is typed here stays put while the field is hidden. -->
+      <div class="field" id="captionField" style="display:none">
+        <label class="lbl" for="caption">Photo caption (optional)</label>
+        <input type="text" id="caption" name="caption" maxlength="60" autocomplete="off" placeholder="us, last summer" />
+        <div class="hint">Handwritten under the photo. Only for a single photo.</div>
       </div>
 
       <div class="field">
@@ -531,6 +543,16 @@
     <!-- Surface B: share state -->
     <div class="share" id="share">
       <div class="share-card">
+        <!-- A palm-size mock of the cover they just sent: the same pattern as
+             the live preview under the theme chips, painted with the final
+             look, occasion, and age when the link is minted. -->
+        <div class="preview-card" id="shareMock" data-theme="cream" aria-hidden="true">
+          <div class="p-frame"></div>
+          <div class="p-medallion" id="sMockMedallion" style="display:none"><span></span></div>
+          <div class="p-eyebrow">for you</div>
+          <div class="p-title" id="sMockTitle">Just<br />because</div>
+          <div class="p-seal"></div>
+        </div>
         <h2 id="shareHeading">Your card is ready.</h2>
         <p>Send this link to their phone. They just tap it.</p>
         <div class="link-row">
@@ -620,6 +642,7 @@
   const photoRemoved = document.getElementById("photoRemoved");
   const qrCanvas = document.getElementById("qrCanvas");
   const previewLink = document.getElementById("previewLink");
+  const captionField = document.getElementById("captionField");
 
   const MAX_PHOTOS = 5;
   let photoBlobs = []; // [{ blob, url }] in strip order
@@ -669,25 +692,39 @@
     thankYou: ["Thank", "you"],
     missYou: ["Miss", "you"],
   };
-  function refreshPreview() {
-    lookPreview.setAttribute("data-theme", theme);
+  // Paints one cover mock from the current theme and occasion plus an age.
+  // Shared by the live preview under the theme chips and the little cover on
+  // the share state, so the two can never drift apart.
+  function paintMock(cardEl, titleEl, medallionEl, ageVal) {
+    cardEl.setAttribute("data-theme", theme);
     // Rebuild the title from the constant lines with text nodes and <br>. No
     // user text ever lands here; the node approach keeps it that way.
     const lines = PREVIEW_TITLES[occasion] || PREVIEW_TITLES.justBecause;
-    pTitle.textContent = "";
+    titleEl.textContent = "";
     lines.forEach((line, i) => {
-      if (i) pTitle.appendChild(document.createElement("br"));
-      pTitle.appendChild(document.createTextNode(line));
+      if (i) titleEl.appendChild(document.createElement("br"));
+      titleEl.appendChild(document.createTextNode(line));
     });
     // The medallion only shows for a birthday with a plausible age, mirroring
     // the same 1..120 check the save path applies.
-    const ageVal = parseInt(previewAgeInput.value, 10);
     const showAge = occasion === "birthday" && Number.isInteger(ageVal) && ageVal >= 1 && ageVal <= 120;
-    pMedallion.querySelector("span").textContent = showAge ? String(ageVal) : "";
-    pMedallion.style.display = showAge ? "" : "none";
+    medallionEl.querySelector("span").textContent = showAge ? String(ageVal) : "";
+    medallionEl.style.display = showAge ? "" : "none";
+  }
+  function refreshPreview() {
+    paintMock(lookPreview, pTitle, pMedallion, parseInt(previewAgeInput.value, 10));
   }
   previewAgeInput.addEventListener("input", refreshPreview);
   refreshPreview();
+
+  // Share-state mini cover: painted in the submit success path with the same
+  // state the live preview reads, so the sender sees the cover they just sent.
+  const shareMock = document.getElementById("shareMock");
+  const sMockTitle = document.getElementById("sMockTitle");
+  const sMockMedallion = document.getElementById("sMockMedallion");
+  function refreshShareMock(ageVal) {
+    paintMock(shareMock, sMockTitle, sMockMedallion, ageVal);
+  }
 
   // Falling-emoji picker: three individually editable slots, with themed presets
   // that fill all three at once. Default = love. Each slot holds one emoji.
@@ -792,6 +829,10 @@
     dropLabel.textContent = photoBlobs.length === 0
       ? "Add photos"
       : "Add more (" + photoBlobs.length + "/" + MAX_PHOTOS + ")";
+    // The caption is a handwritten line under a single polaroid; the strip has
+    // none. Show the field only at exactly one photo. Its value is not cleared
+    // on hide, so removing a photo back down to one brings the caption back.
+    captionField.style.display = photoBlobs.length === 1 ? "" : "none";
   }
   photoInput.addEventListener("change", async () => {
     const files = Array.from(photoInput.files || []);
@@ -842,6 +883,7 @@
 
     const result = await saveCard({
       recipientName, message, signoff, whoSentYou, age,
+      caption: document.getElementById("caption").value.trim(),
       occasion, effect, theme, emojis: chosenEmojis,
       photoBlobs: photoBlobs.map((p) => p.blob),
       refCardId, generation,
@@ -879,7 +921,10 @@
 
     shareLink.value = result.url;
     previewLink.href = result.url;
-    // Name the heading, surface native share where it exists, retire the draft.
+    // Paint the mini cover with the final look, occasion, and age (the same
+    // validated age the row carries), then name the heading, surface native
+    // share where it exists, and retire the draft.
+    refreshShareMock(age);
     finishShareState(recipientName);
     form.style.display = "none";
     share.style.display = "block";
@@ -932,6 +977,7 @@
         recipientName: document.getElementById("recipientName").value.trim(),
         message: document.getElementById("message").value.trim(),
         signoff: document.getElementById("signoff").value.trim(),
+        caption: document.getElementById("caption").value.trim(),
         photos: photoBlobs.map((p) => p.url),
         emojis: currentEmojis(),
         theme: theme,
@@ -1035,6 +1081,7 @@
       signoff: document.getElementById("signoff").value,
       whoSentYou: document.getElementById("whoSentYou").value,
       age: document.getElementById("age").value,
+      caption: document.getElementById("caption").value,
       occasion: occasion,
       effect: effect,
       theme: theme,
@@ -1053,7 +1100,7 @@
     clearTimeout(draftTimer); // a save still in flight must not resurrect it
     try { localStorage.removeItem(DRAFT_KEY); } catch (err) {}
   }
-  ["recipientName", "message", "signoff", "whoSentYou", "age"].forEach((id) => {
+  ["recipientName", "message", "signoff", "whoSentYou", "age", "caption"].forEach((id) => {
     document.getElementById(id).addEventListener("input", queueDraftSave);
   });
   // These run after the wireChips listeners on the same click, so the let vars
@@ -1102,6 +1149,9 @@
     signoffEl.value = str(draft.signoff);
     whoEl.value = str(draft.whoSentYou);
     ageEl.value = str(draft.age); // before the occasion click, which reads it
+    // Photos never restore, so the caption field stays hidden here; the value
+    // waits in the input and shows again once a single photo is re-added.
+    document.getElementById("caption").value = str(draft.caption);
     clickChip("occasionChips", "data-value", draft.occasion);
     clickChip("effectChips", "data-value", draft.effect);
     clickChip("themeChips", "data-value", draft.theme);
