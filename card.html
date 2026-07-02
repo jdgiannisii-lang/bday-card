@@ -171,6 +171,9 @@
     position: relative;
     width: min(84vw, 350px);
     height: min(72vh, 470px);
+    /* svh sizes against the SMALL viewport (phone browser toolbar visible),
+       so the fixed pills at the bottom never cover the card's lower edge. */
+    height: min(72svh, 470px);
     transform-style: preserve-3d;
     cursor: pointer;
     transition: transform 1s cubic-bezier(.22,.7,.18,1);
@@ -580,7 +583,7 @@
      the emojis instead of buried in them. */
   .replay {
     position: fixed;
-    bottom: 18px; left: 50%;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px)); left: 50%;
     transform: translateX(-50%) translateY(14px);
     z-index: 60;
     border: 1px solid color-mix(in srgb, var(--foil-mid) 42%, transparent);
@@ -606,7 +609,7 @@
      it) and reveals it in step with the replay. */
   .sound-toggle {
     position: fixed;
-    right: 18px; bottom: 18px;
+    right: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     transform: translateY(14px);
     z-index: 60;
     border: 1px solid color-mix(in srgb, var(--foil-mid) 42%, transparent);
@@ -630,7 +633,7 @@
   /* Surface C: the recipient CTA. Caveat, rose, a single underline, on the pill. */
   .cta {
     position: fixed;
-    bottom: 66px; left: 50%;
+    bottom: calc(66px + env(safe-area-inset-bottom, 0px)); left: 50%;
     transform: translateX(-50%) translateY(14px);
     z-index: 60;
     /* fixed + left:50% shrink-to-fit would wrap the label at half the viewport;
@@ -669,7 +672,7 @@
      never shows a dead control). */
   .reactions {
     position: fixed;
-    bottom: 160px; left: 50%;
+    bottom: calc(160px + env(safe-area-inset-bottom, 0px)); left: 50%;
     transform: translateX(-50%) translateY(14px);
     z-index: 60;
     width: max-content;
@@ -722,10 +725,10 @@
     /* Short phones: compact the bottom stack so three pills fit under the
        card (cta one slim line at the very bottom, replay above it, reactions
        on top). */
-    .cta { bottom: 10px; padding: 7px 18px 9px; }
+    .cta { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); padding: 7px 18px 9px; }
     .cta .cta-sub { display: none; }
-    .replay { bottom: 72px; }
-    .reactions { bottom: 122px; }
+    .replay { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+    .reactions { bottom: calc(122px + env(safe-area-inset-bottom, 0px)); }
   }
 
   /* Soft retry message if the card fetch fails (paused project, offline).

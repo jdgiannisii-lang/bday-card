@@ -78,7 +78,8 @@
     background: var(--paper); border: 1px solid var(--paper-edge); border-radius: var(--radius);
     padding: 12px 14px; line-height: 1.5;
   }
-  input::placeholder, textarea::placeholder { color: var(--ink-soft); }
+  /* Placeholders must read as ghosts, not as answers already written. */
+  input::placeholder, textarea::placeholder { color: var(--ink-soft); opacity: .5; }
   input[type=text], textarea { transition: border-color .15s, box-shadow .15s; }
   /* The active field should be unmistakable: rose border plus a soft outer glow. */
   input[type=text]:focus, textarea:focus {
