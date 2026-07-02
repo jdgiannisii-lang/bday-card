@@ -633,10 +633,21 @@
     font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive; font-size: 15px; color: var(--ink-soft);
   }
 
-  /* Soft retry message if the card fetch fails (paused project, offline). */
+  /* Soft retry message if the card fetch fails (paused project, offline).
+     It floats top center, clear of the replay and CTA pills that own the
+     bottom center once the card opens (they overlapped when it sat there). */
   .retry {
-    position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
     z-index: 60; display: none;
+    width: max-content; max-width: 94vw;
+    border: 1px solid color-mix(in srgb, var(--foil-mid) 42%, transparent);
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(var(--shadow),.18);
+    cursor: pointer;
+    padding: 4px 16px 6px;
     font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive; font-size: 17px; color: var(--ink-soft); text-align: center;
   }
   .retry.show { display: block; }
@@ -851,8 +862,52 @@
   var PALETTE = THEME_PALETTES.cream;
 
   var particles = [];
-  function rand(a, b) { return a + Math.random() * (b - a); }
-  function pick(a) { return a[(Math.random() * a.length) | 0]; }
+
+  /* Deterministic playback. A shared card should deal the exact same
+     celebration on every open, so when the URL carries a token we seed a
+     tiny PRNG from it and route all engine randomness through _rng. Pages
+     with no token (the landing, the maker preview) never take the branch
+     below, so they keep the browser's own randomness with this same code. */
+
+  // xmur3-flavored string hash: folds each character into 32 bits with
+  // enough avalanche that near-identical tokens land far apart.
+  function hashSeed(str) {
+    var h = 1779033703 ^ str.length;
+    for (var i = 0; i < str.length; i++) {
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+
+  // mulberry32: one 32 bit cell of state, floats in [0, 1). Tiny, fast,
+  // and plenty random for confetti; a seed always deals the same sequence.
+  function mulberry32(seed) {
+    var s = seed >>> 0;
+    return function () {
+      s = (s + 0x6D2B79F5) >>> 0;
+      var t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  var _rng = Math.random;
+  var _seedStr = null;
+  // Same token spots the module script reads: the clean /c/<token>/ path
+  // first, then the ?c= query param.
+  (function () {
+    var m = location.pathname.match(/\/c\/([^\/]+)\/?$/);
+    var t = (m && m[1]) || new URLSearchParams(location.search).get("c");
+    if (t) { _seedStr = t; _rng = mulberry32(hashSeed(t)); }
+  })();
+  window.__CARD_SEED = _seedStr; // verification hook: the seed in play, null when random
+
+  function rand(a, b) { return a + _rng() * (b - a); }
+  function pick(a) { return a[(_rng() * a.length) | 0]; }
 
   function heartPath(c, s) {
     c.beginPath();
@@ -931,6 +986,37 @@
         life: 1, decay: rand(.0016, .003) });
     }
     startLoop();
+  }
+
+  /* Reduced motion still deserves a moment. Instead of the burst and its
+     loop, paint one quiet scatter of shapes straight onto the canvas: a
+     celebration held still. Drawn once, nothing moves, and resetCard's
+     clearRect takes it away again. Seeded cards scatter deterministically
+     because everything below draws through rand()/pick(). */
+  function drawStillCelebration() {
+    var n = 12 + (rand(0, 5) | 0); // 12 to 16 shapes, restrained on purpose
+    for (var i = 0; i < n; i++) {
+      var x = rand(W * 0.08, W * 0.92);
+      var y = rand(H * 0.06, H * 0.66); // upper two thirds, clear of the pile zone
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rand(0, 6.28));
+      ctx.globalAlpha = rand(.55, .9);
+      if (i % 3 === 0) {
+        ctx.fillStyle = pick(PALETTE.hearts);
+        heartPath(ctx, rand(8, 17));
+        ctx.fill();
+      } else if (i % 3 === 1) {
+        ctx.fillStyle = pick(PALETTE.confetti);
+        var w = rand(5, 9), h = rand(8, 14);
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+      } else {
+        ctx.fillStyle = pick(PALETTE.sparkles);
+        sparklePath(ctx, rand(5, 13));
+        ctx.fill();
+      }
+      ctx.restore();
+    }
   }
 
   var emojiBalls = [];
@@ -1230,11 +1316,11 @@
     var tints = PALETTE.petals;
     var html = "";
     for (var i = 0; i < CONFIG.ambientPetals; i++) {
-      var left = Math.random() * 100, dur = 14 + Math.random() * 12,
-          delay = -Math.random() * dur, size = 9 + Math.random() * 9,
-          op = .2 + Math.random() * .25;
+      var left = rand(0, 100), dur = rand(14, 26),
+          delay = -rand(0, dur), size = rand(9, 18),
+          op = rand(.2, .45);
       html += '<span class="petal" style="left:' + left + 'vw;width:' + size +
-              'px;height:' + size + 'px;opacity:' + op + ';background:' + tints[(Math.random()*tints.length)|0] +
+              'px;height:' + size + 'px;opacity:' + op + ';background:' + pick(tints) +
               ';animation-duration:' + dur + 's;animation-delay:' + delay + 's;"></span>';
     }
     petalLayer.innerHTML = html;
@@ -1259,11 +1345,15 @@
   var isOpen = false;
   function openCard() {
     if (isOpen) return;
+    // Rewind the seeded stream first, so "read it again" replays the very
+    // same celebration instead of drawing on from where the last one stopped.
+    if (_seedStr) _rng = mulberry32(hashSeed(_seedStr));
     isOpen = true;
     card.classList.add("opened");
     if (scroller) scroller.scrollTop = 0;
     inside.classList.remove("read");
-    setTimeout(burst, reduceMotion ? 0 : 440);
+    // Under reduced motion burst() would bail; paint the still scatter instead.
+    setTimeout(reduceMotion ? drawStillCelebration : burst, reduceMotion ? 0 : 440);
     setTimeout(openStrip, reduceMotion ? 0 : 520);
     setTimeout(dropEmojis, reduceMotion ? 0 : 520);
     setTimeout(startDrizzle, reduceMotion ? 0 : 1300);

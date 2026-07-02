@@ -64,6 +64,115 @@ jobs:
           # 404.html (the /c/<token>/ catch-all) is written later, after the
           # per-theme link preview steps have retargeted card.html's og:image.
 
+      # The served site must never phone Google Fonts. Pull the css2 stylesheet
+      # once at deploy (Chrome UA so woff2 is served), save every face under
+      # _site/fonts/, and point index/card/maker at the local copy. The href
+      # stays relative on purpose: deep /c/<token>/ routes resolve it through
+      # the injected <base>. rachel.html is frozen and keeps its committed
+      # Google Fonts links. Runs before the per-theme step, so card-sage, dusk,
+      # sky and 404.html all inherit the rewritten card.html. Fail-open: if any
+      # download breaks, the staged HTML is left untouched and the committed
+      # async Google Fonts setup still works.
+      - name: Self-host fonts
+        run: |
+          python3 - <<'PYEOF'
+          import re
+          import sys
+          import urllib.request
+          from pathlib import Path
+
+          SITE = Path("_site")
+          UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
+
+          def bail(msg):
+              print("::warning::Self-host fonts skipped: " + msg
+                    + " The pages keep their async Google Fonts links.")
+              sys.exit(0)
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers={"User-Agent": UA})
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  return resp.read()
+
+          def read(path):
+              with open(path, encoding="utf-8", newline="") as f:
+                  return f.read()
+
+          def write(path, text):
+              with open(path, "w", encoding="utf-8", newline="") as f:
+                  f.write(text)
+
+          card = read(SITE / "card.html")
+          hit = re.search(r'https://fonts\.googleapis\.com/css2\?[^"\']+', card)
+          if not hit:
+              bail("no css2 URL found in the staged card.html.")
+          css_url = hit.group(0).replace("&amp;", "&")
+
+          # Fetch the CSS and every face it names before touching anything, so
+          # a network failure leaves the staged site exactly as committed.
+          try:
+              css = fetch(css_url).decode("utf-8")
+              remotes = []
+              for m in re.finditer(r"url\(([^)]+)\)", css):
+                  u = m.group(1).strip("'\"")
+                  if u not in remotes:
+                      remotes.append(u)
+              if not remotes:
+                  bail("the fonts CSS came back with no url() entries.")
+              local = {}
+              used = set()
+              for u in remotes:
+                  name = u.rsplit("/", 1)[-1]
+                  if name in used:
+                      name = str(len(used)) + "-" + name
+                  used.add(name)
+                  local[u] = name
+              blobs = {name: fetch(u) for u, name in local.items()}
+          except Exception as exc:
+              bail("could not download the fonts (" + str(exc) + ").")
+
+          fonts = SITE / "fonts"
+          fonts.mkdir(exist_ok=True)
+          for name, data in blobs.items():
+              (fonts / name).write_bytes(data)
+          write(fonts / "fonts.css", re.sub(
+              r"url\(([^)]+)\)",
+              lambda m: "url(" + local[m.group(1).strip("'\"")] + ")",
+              css))
+          print("Self-host fonts: saved " + str(len(blobs)) + " faces plus fonts.css.")
+
+          LOCAL_LINK = '<link rel="stylesheet" href="fonts/fonts.css" />'
+
+          def relink(html):
+              out = html
+              # The async-loading explainer comment no longer applies.
+              out = re.sub(r"[ \t]*<!--(?:(?!-->)[\s\S])*?Fonts load async"
+                           r"(?:(?!-->)[\s\S])*?-->[ \t]*\r?\n?", "", out)
+              out = re.sub(r"[ \t]*<noscript>\s*<link\b[^>]*fonts\.googleapis\.com"
+                           r"[^>]*>\s*</noscript>[ \t]*\r?\n?", "", out)
+              out = re.sub(r'[ \t]*<link\b(?=[^>]*rel="preconnect")'
+                           r"(?=[^>]*fonts\.(?:googleapis|gstatic)\.com)[^>]*>[ \t]*\r?\n?",
+                           "", out)
+              return re.sub(r"<link\b[^>]*fonts\.googleapis\.com/css2[^>]*>",
+                            LOCAL_LINK, out)
+
+          # rachel.html is frozen; it ships exactly as committed, Google Fonts
+          # and all. Every other page is relinked in memory first and written
+          # only after all of them check clean, so a surprise regex miss never
+          # leaves the site half-rewritten.
+          pages = sorted(p for p in SITE.glob("*.html") if p.name != "rachel.html")
+          relinked = {}
+          for page in pages:
+              out = relink(read(page))
+              if re.search(r"fonts\.(?:googleapis|gstatic)\.com", out):
+                  bail(page.name + " still pointed at Google Fonts after the rewrite.")
+              relinked[page] = out
+          for page, out in relinked.items():
+              write(page, out)
+              print("Self-host fonts: relinked " + page.name)
+          PYEOF
+
       # shared/config.js is gitignored; generate it at deploy time from
       # repository Variables, matching shared/config.example.js exports.
       - name: Write client config from repository variables

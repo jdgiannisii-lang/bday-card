@@ -362,6 +362,36 @@
     border: 1.5px solid rgba(255,255,255,.5); background: rgba(248,241,227,.94);
     color: var(--ink); font: inherit; font-size: 15px; cursor: pointer;
   }
+
+  /* Message starters: two ready-made first lines under the note, set in Caveat
+     like a hint. Borderless until hover so they read as suggestions, not controls. */
+  .starters { margin-top: 8px; }
+  .starters-lead { font-family: 'Caveat', cursive; font-size: 15px; color: var(--ink-soft); }
+  .starter {
+    display: block; width: 100%; margin-top: 4px; padding: 4px 10px; text-align: left;
+    background: none; border: 1.5px solid transparent; border-radius: var(--radius);
+    font-family: 'Caveat', cursive; font-size: 17px; line-height: 1.3; color: var(--ink-soft);
+    cursor: pointer; white-space: normal; transition: border-color .15s, color .15s;
+  }
+  @media (hover: hover) { .starter:hover { border-color: var(--rose); color: var(--rose-deep); } }
+
+  /* Draft-restored notice: hint styling plus a tiny dismiss, above the first field. */
+  .draft-note {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;
+    font-family: 'Caveat', cursive; font-size: 15px; color: var(--ink-soft); line-height: 1.32;
+  }
+  .draft-note button {
+    border: none; background: none; padding: 2px 6px; line-height: 1;
+    color: var(--rose-deep); font-family: 'Outfit', sans-serif; font-size: 12px; cursor: pointer;
+  }
+
+  /* Share ergonomics: the link input may now share its row with two buttons,
+     and the QR can leave as a PNG. */
+  .link-row input { min-width: 0; }
+  .qr-save {
+    margin-top: 6px; font-family: 'Caveat', cursive; font-size: 16px;
+    color: var(--rose-deep); text-decoration: none; border-bottom: 1.5px solid var(--rose);
+  }
 </style>
 </head>
 <body>
@@ -398,6 +428,12 @@
         <label class="lbl" for="message">Your note</label>
         <textarea id="message" name="message"></textarea>
         <div class="hint">Write it like you'd say it.</div>
+        <!-- Two first lines for the picked occasion; they show only while the note is empty. -->
+        <div class="starters" id="starters" style="display:none">
+          <div class="starters-lead">Need a first line?</div>
+          <button type="button" class="starter" id="starter0"></button>
+          <button type="button" class="starter" id="starter1"></button>
+        </div>
         <div class="err" id="err-message"></div>
       </div>
 
@@ -495,15 +531,19 @@
     <!-- Surface B: share state -->
     <div class="share" id="share">
       <div class="share-card">
-        <h2>Your card is ready.</h2>
+        <h2 id="shareHeading">Your card is ready.</h2>
         <p>Send this link to their phone. They just tap it.</p>
         <div class="link-row">
           <input type="text" id="shareLink" readonly />
           <button type="button" class="copy" id="copyBtn">Copy link</button>
+          <!-- Native share sheet; revealed only where navigator.share exists. -->
+          <button type="button" class="copy" id="shareBtn" style="display:none">Share it</button>
         </div>
         <div class="qr-wrap">
           <canvas id="qrCanvas" aria-label="QR code for your card link"></canvas>
           <div class="qr-cap">Or let them scan this.</div>
+          <!-- Lives inside .qr-wrap so a failed QR hides this too. -->
+          <a class="qr-save" id="qrSave" href="#" download="card-qr.png">Save the QR</a>
         </div>
         <span class="again" id="makeAnother">Make another</span>
         <a class="preview" id="previewLink" target="_blank" rel="noopener">Preview it</a>
@@ -839,6 +879,8 @@
 
     shareLink.value = result.url;
     previewLink.href = result.url;
+    // Name the heading, surface native share where it exists, retire the draft.
+    finishShareState(recipientName);
     form.style.display = "none";
     share.style.display = "block";
 
@@ -931,6 +973,188 @@
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && previewOverlay.classList.contains("show")) closePreview();
   });
+
+  // Message starters: two ready-made first lines for the picked occasion. They
+  // show only while the note is empty; a tap drops the line in and hands the
+  // cursor back at the end of it.
+  const STARTERS = {
+    justBecause: [
+      "No occasion. I just thought of you and wanted you to know.",
+      "Some days you just want to tell someone they matter. Today it's you.",
+    ],
+    thinkingOfYou: [
+      "You crossed my mind today and it made everything a little lighter.",
+      "Miles apart, but you're right here anyway.",
+    ],
+    birthday: [
+      "Another year of you is the best thing that happened to the rest of us.",
+      "I hope today feels as good as you make everyone else feel.",
+    ],
+    congrats: [
+      "You worked for this and it shows. I'm so proud of you.",
+      "Watching you pull this off has been the best show in town.",
+    ],
+    thankYou: [
+      "What you did meant more than you know. Thank you.",
+      "You showed up when it counted. I won't forget it.",
+    ],
+    missYou: [
+      "The place is quieter without you. Come back soon.",
+      "I keep saving up little things to tell you.",
+    ],
+  };
+  const startersRow = document.getElementById("starters");
+  const starterBtns = [document.getElementById("starter0"), document.getElementById("starter1")];
+  const messageEl = document.getElementById("message");
+  function refreshStarters() {
+    const lines = STARTERS[occasion] || STARTERS.justBecause;
+    starterBtns.forEach((b, i) => { b.textContent = lines[i] || ""; });
+    startersRow.style.display = messageEl.value.trim() ? "none" : "";
+  }
+  starterBtns.forEach((b) => {
+    b.addEventListener("click", () => {
+      messageEl.value = b.textContent;
+      queueDraftSave();
+      messageEl.focus();
+      messageEl.setSelectionRange(messageEl.value.length, messageEl.value.length);
+      refreshStarters(); // the note has text now, so the row steps aside
+    });
+  });
+  messageEl.addEventListener("input", refreshStarters);
+  refreshStarters();
+
+  // Draft autosave: text and choices only, never photos. localStorage can be
+  // unavailable (private mode), so every touch is wrapped; a failure just means
+  // drafts do not stick.
+  const DRAFT_KEY = "makerDraft.v1";
+  let draftTimer = null;
+  function draftSnapshot() {
+    return {
+      recipientName: document.getElementById("recipientName").value,
+      message: messageEl.value,
+      signoff: document.getElementById("signoff").value,
+      whoSentYou: document.getElementById("whoSentYou").value,
+      age: document.getElementById("age").value,
+      occasion: occasion,
+      effect: effect,
+      theme: theme,
+      emojis: slotEls.map((s) => s.value),
+      photoCount: photoBlobs.length,
+    };
+  }
+  function saveDraftNow() {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draftSnapshot())); } catch (err) {}
+  }
+  function queueDraftSave() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraftNow, 400);
+  }
+  function clearDraft() {
+    clearTimeout(draftTimer); // a save still in flight must not resurrect it
+    try { localStorage.removeItem(DRAFT_KEY); } catch (err) {}
+  }
+  ["recipientName", "message", "signoff", "whoSentYou", "age"].forEach((id) => {
+    document.getElementById(id).addEventListener("input", queueDraftSave);
+  });
+  // These run after the wireChips listeners on the same click, so the let vars
+  // above are already current when the snapshot is taken.
+  ["occasionChips", "effectChips", "themeChips", "emojiChips"].forEach((id) => {
+    document.getElementById(id).addEventListener("click", queueDraftSave);
+  });
+  slotEls.forEach((s) => s.addEventListener("input", queueDraftSave));
+  // The starter lines track the occasion; piggyback on the same click.
+  document.getElementById("occasionChips").addEventListener("click", refreshStarters);
+
+  function showDraftNote(hadPhotos) {
+    const note = document.createElement("div");
+    note.className = "draft-note";
+    const text = document.createElement("span");
+    text.textContent = hadPhotos ? "Draft restored, add your photos again." : "Draft restored.";
+    const dismiss = document.createElement("button");
+    dismiss.type = "button";
+    dismiss.setAttribute("aria-label", "Dismiss");
+    dismiss.textContent = "✕";
+    dismiss.addEventListener("click", () => note.remove());
+    note.appendChild(text);
+    note.appendChild(dismiss);
+    form.insertBefore(note, form.firstElementChild);
+  }
+  // Clicking the stored chip reuses the wireChips path, so the let vars, the
+  // aria-pressed states, the age field, and the cover mock all stay in step.
+  function clickChip(groupId, attr, value) {
+    if (typeof value !== "string" || !/^[a-zA-Z]+$/.test(value)) return;
+    const chip = document.querySelector("#" + groupId + " .chip[" + attr + '="' + value + '"]');
+    if (chip) chip.click();
+  }
+  function restoreDraft() {
+    let draft = null;
+    try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (err) { return; }
+    if (!draft || typeof draft !== "object") return;
+    const str = (v) => (typeof v === "string" ? v : "");
+    const nameEl = document.getElementById("recipientName");
+    const signoffEl = document.getElementById("signoff");
+    const whoEl = document.getElementById("whoSentYou");
+    const ageEl = document.getElementById("age");
+    // Only an untouched form gets the draft; never stomp typed text.
+    if (nameEl.value || messageEl.value || signoffEl.value || whoEl.value || ageEl.value) return;
+    nameEl.value = str(draft.recipientName);
+    messageEl.value = str(draft.message);
+    signoffEl.value = str(draft.signoff);
+    whoEl.value = str(draft.whoSentYou);
+    ageEl.value = str(draft.age); // before the occasion click, which reads it
+    clickChip("occasionChips", "data-value", draft.occasion);
+    clickChip("effectChips", "data-value", draft.effect);
+    clickChip("themeChips", "data-value", draft.theme);
+    const emojis = Array.isArray(draft.emojis) ? draft.emojis.map(str) : null;
+    if (emojis) {
+      // A slot set that matches a named preset relights that chip; anything
+      // hand-picked fills the slots and leaves the presets unlit.
+      const preset = Object.keys(EMOJI_SETS).find((k) => EMOJI_SETS[k].join("\n") === emojis.join("\n"));
+      if (preset) {
+        clickChip("emojiChips", "data-set", preset);
+      } else {
+        fillSlots(emojis);
+        emojiChips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
+      }
+    }
+    refreshPreview();
+    refreshStarters(); // a restored note hides the starter lines
+    showDraftNote(draft.photoCount > 0);
+  }
+
+  // Share ergonomics: name the heading, offer the native share sheet where one
+  // exists, and let the QR leave as a PNG.
+  const shareHeading = document.getElementById("shareHeading");
+  const shareBtn = document.getElementById("shareBtn");
+  const qrSave = document.getElementById("qrSave");
+  let shareName = "";
+  // Called from the submit success path, right as the share state shows.
+  function finishShareState(name) {
+    shareName = name || "";
+    if (shareName) shareHeading.textContent = shareName + "'s card is ready.";
+    shareBtn.style.display = navigator.share ? "" : "none";
+    clearDraft(); // the card is minted; "Make another" starts fresh
+  }
+  shareBtn.addEventListener("click", async () => {
+    try {
+      await navigator.share({
+        title: "A little card for " + (shareName || "you"),
+        text: "I made you something.",
+        url: shareLink.value,
+      });
+    } catch (err) {
+      // Closing the sheet rejects with AbortError; that is a choice, not a failure.
+    }
+  });
+  qrSave.addEventListener("click", (e) => {
+    try {
+      qrSave.href = qrCanvas.toDataURL("image/png"); // the default action then downloads it
+    } catch (err) {
+      e.preventDefault(); // no PNG to hand over; the on-screen QR still scans
+    }
+  });
+
+  restoreDraft();
 </script>
 </body>
 </html>
