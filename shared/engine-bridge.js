@@ -13,6 +13,9 @@ const OCCASION_GREETING = {
   birthday: (name) => `Happy Birthday,\n${name}!`,
   thinkingOfYou: (name) => `Thinking of you,\n${name}.`,
   justBecause: (name) => `Hi ${name},\njust because.`,
+  congrats: (name) => `Congratulations,\n${name}!`,
+  thankYou: (name) => `Thank you,\n${name}.`,
+  missYou: (name) => `I miss you,\n${name}.`,
 };
 
 const OCCASION_COVER_TITLE = {
@@ -20,11 +23,17 @@ const OCCASION_COVER_TITLE = {
   birthday: ["Happy", "Birthday"],
   thinkingOfYou: ["Thinking", "of you"],
   justBecause: ["Just", "because"],
+  congrats: ["You", "did it"],
+  thankYou: ["Thank", "you"],
+  missYou: ["Miss", "you"],
 };
 
 function occasionKey(occasion) {
   if (occasion === "birthday") return "birthday";
   if (occasion === "thinkingOfYou") return "thinkingOfYou";
+  if (occasion === "congrats") return "congrats";
+  if (occasion === "thankYou") return "thankYou";
+  if (occasion === "missYou") return "missYou";
   return "justBecause";
 }
 

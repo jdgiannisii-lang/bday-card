@@ -59,6 +59,7 @@ jobs:
           cp index.html card.html maker.html rachel.html photo.jpg og-card.png _site/
           cp -R demo _site/demo
           cp -R shared _site/shared
+          cp -R assets _site/assets
           rm -f _site/shared/config.example.js
           # 404.html (the /c/<token>/ catch-all) is written later, after the
           # per-theme link preview steps have retargeted card.html's og:image.

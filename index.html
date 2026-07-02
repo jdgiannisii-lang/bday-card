@@ -1010,9 +1010,11 @@
   var EMOJIS = ["🥰", "❤️", "🫶", "😍", "💕", "😘"];
 
   // Apple-style emoji artwork, so every recipient (Android/Windows too) sees Apple
-  // emojis, not their platform's set. Images come from emoji-datasource-apple on
-  // jsDelivr (CORS-open, so the canvas is never tainted). Any emoji whose image
-  // fails to load falls back to the native font glyph.
+  // emojis, not their platform's set. The preset artwork ships self-hosted under
+  // assets/emoji/, so the default experience never leans on a third-party CDN.
+  // For any other emoji a sender types, emoji-datasource-apple on jsDelivr
+  // (CORS-open, so the canvas is never tainted) covers the gap, and the native
+  // font glyph is the last resort if every image fails.
   var APPLE_BASE = "https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/";
   var emojiImgs = {}; // char -> { img, ready, failed }
 
@@ -1036,17 +1038,24 @@
       if (emojiImgs[ch]) return;
       var rec = { img: null, ready: false, failed: false };
       emojiImgs[ch] = rec;
-      var cands = emojiCandidates(ch);
+      // Flat source list per candidate name: the self-hosted copy first (kept
+      // relative so the injected <base> resolves it on deep /c/<token>/ paths),
+      // then the CDN copy. The onerror chain walks the whole list before giving up.
+      var sources = [];
+      emojiCandidates(ch).forEach(function (c) {
+        sources.push("assets/emoji/" + c + ".png");
+        sources.push(APPLE_BASE + c + ".png");
+      });
       var idx = 0;
       var im = new Image();
       im.crossOrigin = "anonymous";
       im.onload = function () { rec.img = im; rec.ready = true; };
       im.onerror = function () {
         idx++;
-        if (idx < cands.length) im.src = APPLE_BASE + cands[idx] + ".png";
+        if (idx < sources.length) im.src = sources[idx];
         else rec.failed = true;
       };
-      im.src = APPLE_BASE + cands[0] + ".png";
+      im.src = sources[0];
     });
   }
 

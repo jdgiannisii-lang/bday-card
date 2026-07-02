@@ -165,23 +165,29 @@ export async function saveCard(formData) {
 //   missing or the read errors (so the recipient view can degrade to the cover
 //   plus a soft retry message instead of throwing).
 //
-//   Reads go through the get_card(p_token) SECURITY DEFINER function (migration
-//   0002): direct SELECT on cards is revoked so the table cannot be enumerated
-//   with the public anon key. If the function is missing (0002 not applied yet)
-//   we fall back to the old direct select so existing deployments keep working.
+//   The live project is still on migration 0001 (direct anon SELECT allowed;
+//   the get_card RPC from 0002 is not deployed there yet), so the direct
+//   select runs first. It asks for a plain array with limit(1): a missing
+//   token comes back as HTTP 200 with [], so the recipient's console stays
+//   clean (an RPC-first attempt logged a 404, and .single() logged a 406 for
+//   unknown tokens; browsers surface both as resource errors even when the
+//   code handles them). Once 0002 is applied, the direct select starts
+//   failing and we fall through to get_card(p_token), the SECURITY DEFINER
+//   read path; flip this order back to RPC-first when that ships.
 export async function getCardByToken(token) {
   try {
     if (!token) return null;
     const client = await getClient();
-    const rpc = await client.rpc("get_card", { p_token: token });
-    if (!rpc.error) {
-      const rows = Array.isArray(rpc.data) ? rpc.data : (rpc.data ? [rpc.data] : []);
+    const res = await client.from("cards").select("*").eq("token", token).limit(1);
+    if (!res.error) {
+      const rows = Array.isArray(res.data) ? res.data : [];
       return rows.length ? rows[0] : null;
     }
-    // Fallback for databases still on migration 0001 only.
-    const res = await client.from("cards").select("*").eq("token", token).single();
-    if (res.error) return null;
-    return res.data || null;
+    // Fallback for databases where 0002 has revoked direct SELECT.
+    const rpc = await client.rpc("get_card", { p_token: token });
+    if (rpc.error) return null;
+    const rows = Array.isArray(rpc.data) ? rpc.data : (rpc.data ? [rpc.data] : []);
+    return rows.length ? rows[0] : null;
   } catch (err) {
     return null;
   }
