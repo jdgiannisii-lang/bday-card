@@ -48,8 +48,10 @@ async function mintToken() {
 //   }
 //   Mints a token, uploads the photos (if any) to unguessable Storage paths,
 //   inserts the cards row, and returns { token, url } where url is the absolute
-//   card.html?c=<token> link. On any Supabase error it returns { error } rather
-//   than throwing, so the maker can show the UI-SPEC error copy.
+//   card.html?c=<token> link (in production, non-cream themes get the
+//   card-<theme>.html variant so the link preview matches the palette). On any
+//   Supabase error it returns { error } rather than throwing, so the maker can
+//   show the UI-SPEC error copy.
 export async function saveCard(formData) {
   try {
     const data = formData || {};
@@ -142,7 +144,16 @@ export async function saveCard(formData) {
     // so link previews render in iMessage/WhatsApp, whereas a clean /c/<token>/
     // path returns 404 (SPA fallback) and can suppress the preview. The clean
     // route still works for anyone who has such a link.
-    const url = `${location.origin}${base}card.html?c=${token}`;
+    //
+    // Non-cream themes share the theme's page variant (card-dusk.html etc.),
+    // whose og:image points at the matching og/og-<theme>.png, so the link
+    // unfurl matches the card's palette. Those variants only exist on the
+    // deployed site (the Pages workflow generates them), so localhost always
+    // uses card.html. The clean /c/<token>/ route keeps the cream preview;
+    // that is fine.
+    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const page = (!isLocal && content.theme !== "cream") ? ("card-" + content.theme + ".html") : "card.html";
+    const url = `${location.origin}${base}${page}?c=${token}`;
     return { token, url };
   } catch (err) {
     return { error: err };

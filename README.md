@@ -75,6 +75,14 @@ stages only the public files, generates `shared/config.js` at deploy time from
 repository Variables, and copies `card.html` to `404.html` so `/c/<token>/`
 links resolve.
 
+The workflow also builds the per-theme link previews: it screenshots
+`og-template.html` with Playwright once per theme into `og/og-<theme>.png`
+(falling back to `og-card.png` if the render fails) and generates
+`card-sage.html`, `card-dusk.html` and `card-sky.html`, copies of `card.html`
+whose `og:image` points at the themed image. Share links for non-cream cards
+use those variants, so a dusk card unfurls dark and gold in iMessage instead
+of cream.
+
 Set these under Settings, then Secrets and variables, then Actions, under
 **Variables** (not Secrets; all four are public client keys):
 

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Link preview template</title>
+
+<!--
+  NOT a user-facing page. The deploy workflow screenshots this at exactly
+  1200x630 once per theme (?theme=cream|sage|dusk|sky) to produce the
+  og/og-<theme>.png link preview images, so a Dusk card unfurls dark and
+  gold instead of cream. Keep the palette blocks below in sync with
+  card.html; they are the same custom properties, copied verbatim.
+-->
+
+<script>
+  // Pick the theme from the query string. Same allowlist the card view
+  // enforces; anything else falls back to cream (the :root palette).
+  (function () {
+    var m = location.search.match(/[?&]theme=([a-z]+)/);
+    var t = m ? m[1] : "cream";
+    if (["cream", "sage", "dusk", "sky"].indexOf(t) === -1) t = "cream";
+    document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+
+<!--
+  Unlike card.html this page loads fonts with a plain blocking stylesheet
+  (no media="print" swap trick): it is only ever screenshotted on the deploy
+  runner, so we WANT the render to wait for Cormorant and Outfit.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@400;500&display=swap"
+      rel="stylesheet" />
+
+<style>
+  /* Design tokens, copied from card.html. The [data-theme] blocks re-point
+     ONLY these properties, so the whole preview retints from one attribute. */
+  :root {
+    --paper:       #f8f1e3;
+    --paper-warm:  #f3e8d4;
+    --paper-edge:  #e7d8bf;
+    --ink:         #46362d;
+    --ink-soft:    #7a685b;
+    --accent:      #c25470;
+    --accent-deep: #9e3a55;
+    --tint:        #e6b3bf;
+    --foil-hi:     #f3dca0;
+    --foil-mid:    #cba455;
+    --foil-lo:     #9c7833;
+    --cover-hi:    #fbf3e6;
+    --bg-0:        #fbf4e8;
+    --bg-1:        #f3e3d3;
+    --bg-2:        #ecd8c4;
+    --shadow:      112,72,48; /* the warm-brown shadow ink, as an rgb triplet */
+  }
+  html[data-theme="sage"] {
+    --paper:       #f5f3e9;
+    --paper-warm:  #edeadb;
+    --paper-edge:  #d8d5bd;
+    --ink:         #3c4334;
+    --ink-soft:    #6e7460;
+    --accent:      #5f8563;
+    --accent-deep: #46684c;
+    --tint:        #c9d6c0;
+    --cover-hi:    #f9f7ee;
+    --bg-0:        #f7f5ea;
+    --bg-1:        #e9e9d6;
+    --bg-2:        #dbdec6;
+    --shadow:      84,94,66;
+  }
+  html[data-theme="dusk"] {
+    --paper:       #2a3040;
+    --paper-warm:  #232938;
+    --paper-edge:  #1b2130;
+    --ink:         #ece3cf;
+    --ink-soft:    #a9a28d;
+    --accent:      #d3a952;
+    --accent-deep: #b8903c;
+    --tint:        #56617c;
+    --foil-hi:     #f0d795;
+    --foil-mid:    #cfa54e;
+    --foil-lo:     #97742e;
+    --cover-hi:    #333a4d;
+    --bg-0:        #262c3c;
+    --bg-1:        #1d2331;
+    --bg-2:        #151a26;
+    --shadow:      4,7,14;
+  }
+  html[data-theme="sky"] {
+    --paper:       #f0f3f7;
+    --paper-warm:  #e7ecf2;
+    --paper-edge:  #d2dbe4;
+    --ink:         #35404e;
+    --ink-soft:    #68798c;
+    --accent:      #5b7fa6;
+    --accent-deep: #41628a;
+    --tint:        #c3d2e2;
+    --foil-hi:     #eef1f5;
+    --foil-mid:    #b3bfcc;
+    --foil-lo:     #8291a3;
+    --cover-hi:    #f6f9fc;
+    --bg-0:        #f3f7fb;
+    --bg-1:        #e2eaf2;
+    --bg-2:        #d3dfe9;
+    --shadow:      62,84,110;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+  }
+
+  /* The whole preview lives in one fixed 1200x630 frame (the OG image size);
+     the screenshot viewport matches, so nothing else may affect layout. */
+  .frame {
+    position: fixed;
+    top: 0; left: 0;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(1100px 760px at 50% 22%, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+  }
+
+  /* A closed card cover, slightly tilted, exactly like the recipient's first
+     frame. Same gradient and shadow recipe as .cover in card.html. */
+  .cover {
+    position: relative;
+    width: 430px;
+    height: 560px;
+    border-radius: 14px;
+    transform: rotate(-2deg);
+    background:
+      linear-gradient(150deg, var(--cover-hi) 0%, var(--paper) 48%, var(--paper-warm) 100%);
+    box-shadow: 0 26px 50px rgba(var(--shadow), .3),
+                inset 0 0 0 1px rgba(255,255,255,.35);
+  }
+  .gold-frame {
+    position: absolute;
+    inset: 18px;
+    border-radius: 7px;
+    border: 1.5px solid transparent;
+    background:
+      linear-gradient(var(--paper), var(--paper)) padding-box,
+      linear-gradient(135deg, var(--foil-lo), var(--foil-hi), var(--foil-mid)) border-box;
+    opacity: .85;
+  }
+  .cover-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    text-align: center;
+    padding: 40px;
+  }
+  .eyebrow {
+    font-weight: 500;
+    letter-spacing: .42em;
+    text-transform: uppercase;
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding-left: .42em;
+  }
+  .title {
+    font-family: 'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 54px;
+    line-height: 1.06;
+    padding-bottom: .14em;
+    background: linear-gradient(100deg, var(--foil-lo) 0%, var(--foil-mid) 22%,
+                #edcd80 40%, var(--foil-mid) 58%, var(--foil-lo) 82%, var(--foil-mid) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(255,255,255,.5));
+  }
+  .seal {
+    width: 56px;
+    height: 56px;
+    border-radius: 49% 51% 52% 48% / 48% 50% 50% 52%;
+    /* The wax stays red on every theme (a real seal is not dyed to match the
+       paper), so these are literals, not the accent vars. Same as card.html. */
+    background:
+      radial-gradient(60% 55% at 38% 32%, #c5546c 0%, #c25470 36%, #9e3a55 78%, #7e2c43 100%);
+    box-shadow:
+      0 8px 16px rgba(126,44,67,.5),
+      inset 0 2px 4px rgba(255,255,255,.32),
+      inset 0 -6px 12px rgba(70,18,33,.55);
+    transform: rotate(-7deg);
+    display: grid;
+    place-items: center;
+  }
+  .seal svg {
+    width: 27px;
+    height: 27px;
+    fill: #84304a;
+    filter: drop-shadow(0 1px 0 rgba(255,255,255,.22)) drop-shadow(0 -1px 1px rgba(60,16,30,.6));
+    opacity: .9;
+  }
+  .open-label {
+    letter-spacing: .34em;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--ink-soft);
+    padding-left: .34em;
+  }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="cover">
+      <div class="gold-frame"></div>
+      <div class="cover-content">
+        <div class="eyebrow">for you</div>
+        <div class="title">A little card,<br />just for you</div>
+        <div class="seal">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </div>
+        <div class="open-label">press to open</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

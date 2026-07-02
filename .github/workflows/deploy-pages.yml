@@ -60,9 +60,8 @@ jobs:
           cp -R demo _site/demo
           cp -R shared _site/shared
           rm -f _site/shared/config.example.js
-          # GitHub Pages serves 404.html for unknown paths like /c/<token>/,
-          # so the card page doubles as the catch-all route.
-          cp _site/card.html _site/404.html
+          # 404.html (the /c/<token>/ catch-all) is written later, after the
+          # per-theme link preview steps have retargeted card.html's og:image.
 
       # shared/config.js is gitignored; generate it at deploy time from
       # repository Variables, matching shared/config.example.js exports.
@@ -75,6 +74,60 @@ jobs:
           export const POSTHOG_KEY = "${{ vars.POSTHOG_KEY }}";
           export const POSTHOG_HOST = "${{ vars.POSTHOG_HOST }}";
           EOF
+
+      # Link preview crawlers do not run JS, so each theme needs its own
+      # og:image baked into static HTML. Screenshot og-template.html (served
+      # from the checkout) once per theme on the runner, where Google Fonts
+      # load. Best effort: if Playwright or the render breaks, the fallback
+      # step below keeps every preview slot filled and the deploy proceeds.
+      - name: Render per-theme link previews
+        continue-on-error: true
+        run: |
+          npm install --no-save playwright@1.56
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8123 &
+          SERVER_PID=$!
+          sleep 2
+          mkdir -p _site/og
+          node --input-type=module <<'EOF'
+          import { chromium } from "playwright";
+          const themes = ["cream", "sage", "dusk", "sky"];
+          const browser = await chromium.launch();
+          const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
+          for (const t of themes) {
+            await page.goto(`http://127.0.0.1:8123/og-template.html?theme=${t}`, { waitUntil: "networkidle" });
+            // Give the blocking Google Fonts stylesheet time to settle.
+            await page.waitForTimeout(2500);
+            await page.screenshot({ path: `_site/og/og-${t}.png` });
+            console.log(`rendered _site/og/og-${t}.png`);
+          }
+          await browser.close();
+          EOF
+          kill "$SERVER_PID" || true
+
+      # Guarantee all four preview slots exist even when the render step
+      # failed (or partially failed): fill any gap with the branded og-card.png,
+      # so no card ever unfurls with a broken image.
+      - name: Fallback link previews
+        run: |
+          mkdir -p _site/og
+          for t in cream sage dusk sky; do
+            [ -f "_site/og/og-$t.png" ] || cp og-card.png "_site/og/og-$t.png"
+          done
+
+      # Static host, so per-theme og:image means per-theme HTML: card-sage,
+      # card-dusk and card-sky are the staged card.html with only the og:image
+      # content attribute retargeted (saveCard picks the matching variant in
+      # production). card.html itself points at the cream preview, and 404.html
+      # (the /c/<token>/ catch-all GitHub Pages serves for unknown paths) is
+      # copied from it AFTER that sed so clean links keep the cream preview.
+      - name: Generate per-theme card pages
+        run: |
+          for t in sage dusk sky; do
+            sed 's|\(property="og:image" content="[^"]*\)og-card\.png|\1og/og-'"$t"'.png|' _site/card.html > "_site/card-$t.html"
+          done
+          sed -i 's|\(property="og:image" content="[^"]*\)og-card\.png|\1og/og-cream.png|' _site/card.html
+          cp _site/card.html _site/404.html
 
       # Turns GitHub Pages on for this repo (source = GitHub Actions)
       # so no manual settings change is needed.
