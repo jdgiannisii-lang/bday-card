@@ -181,8 +181,8 @@ export function applyCardToEngine(row, opts) {
   // Effect: select among the engine's hand coded canvas variants only. The hosted
   // engine reads window.CARD_EFFECT to bias its CONFIG; the bridge never paints,
   // it only picks a name (D-04: hand coded canvas effects, no premade video).
-  // Allowed values: hearts, confetti, petals, sparkles, balloons.
-  const ALLOWED_EFFECTS = ["hearts", "confetti", "petals", "sparkles", "balloons"];
+  // Allowed values: hearts, confetti, petals, sparkles, balloons, fireflies.
+  const ALLOWED_EFFECTS = ["hearts", "confetti", "petals", "sparkles", "balloons", "fireflies"];
   const effect = ALLOWED_EFFECTS.indexOf(row.effect) !== -1 ? row.effect : "hearts";
   try {
     window.CARD_EFFECT = effect;

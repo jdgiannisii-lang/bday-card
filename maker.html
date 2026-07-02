@@ -395,6 +395,40 @@
     margin-top: 6px; font-family: 'Caveat', cursive; font-size: 16px;
     color: var(--rose-deep); text-decoration: none; border-bottom: 1.5px solid var(--rose);
   }
+
+  /* "Cards you've made": a quiet ledger of the links minted in this browser.
+     localStorage only; the whole section hides itself while the list is empty. */
+  .mine { display: none; margin-top: 48px; }
+  .mine-lbl {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .34em;
+    color: var(--ink-soft); font-weight: 500; margin: 0 0 4px;
+  }
+  .mine-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid var(--paper-edge);
+  }
+  .mine-dot {
+    width: 10px; height: 10px; border-radius: 999px; flex: none;
+    border: 1px solid var(--paper-edge);
+  }
+  .mine-name {
+    font-family: 'Caveat', cursive; font-size: 18px; color: var(--ink); line-height: 1.2;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mine-occ, .mine-date { font-family: 'Outfit', sans-serif; font-size: 12.5px; color: var(--ink-soft); flex: none; }
+  .mine-date { margin-left: auto; }
+  /* Text actions in the same voice as .again/.preview, sized for a list row. */
+  .mine-act {
+    flex: none; padding: 0; background: none;
+    border: none; border-bottom: 1.5px solid var(--rose);
+    font-family: 'Caveat', cursive; font-size: 17px; line-height: 1.2;
+    color: var(--rose-deep); cursor: pointer; text-decoration: none;
+  }
+  .mine-foot {
+    display: flex; align-items: baseline; gap: 10px; margin-top: 10px;
+    font-family: 'Caveat', cursive; font-size: 15px; color: var(--ink-soft);
+  }
+  .mine-foot .mine-act { font-size: 15px; }
 </style>
 </head>
 <body>
@@ -488,6 +522,7 @@
           <button type="button" class="chip" data-value="petals" aria-pressed="false">Petals</button>
           <button type="button" class="chip" data-value="sparkles" aria-pressed="false">Sparkles</button>
           <button type="button" class="chip" data-value="balloons" aria-pressed="false">Balloons</button>
+          <button type="button" class="chip" data-value="fireflies" aria-pressed="false">Fireflies</button>
         </div>
       </div>
 
@@ -569,6 +604,17 @@
         </div>
         <span class="again" id="makeAnother">Make another</span>
         <a class="preview" id="previewLink" target="_blank" rel="noopener">Preview it</a>
+      </div>
+    </div>
+
+    <!-- Cards you've made: the links minted in this browser (localStorage only).
+         Hidden until there is at least one; rows are built by renderMyCards(). -->
+    <div class="mine" id="mine">
+      <p class="mine-lbl">CARDS YOU'VE MADE</p>
+      <div id="mineList"></div>
+      <div class="mine-foot">
+        <span>Saved only in this browser.</span>
+        <button type="button" class="mine-act" id="mineForget">forget these</button>
       </div>
     </div>
 
@@ -926,6 +972,17 @@
     // share where it exists, and retire the draft.
     refreshShareMock(age);
     finishShareState(recipientName);
+    // Remember the minted card in this browser's ledger and refresh the list
+    // under the share state, so the card they just made is already in it.
+    rememberCard({
+      token: result.token,
+      url: result.url,
+      name: recipientName,
+      theme: theme,
+      occasion: occasion,
+      at: new Date().toISOString(),
+    });
+    renderMyCards();
     form.style.display = "none";
     share.style.display = "block";
 
@@ -1204,7 +1261,115 @@
     }
   });
 
+  // "Cards you've made": a ledger of the links minted in this browser, newest
+  // first, capped at 50. localStorage only (private mode just means an empty
+  // list), so every touch is wrapped; nothing here can break the maker.
+  const MY_CARDS_KEY = "myCards.v1";
+  const mineSection = document.getElementById("mine");
+  const mineList = document.getElementById("mineList");
+  const mineForget = document.getElementById("mineForget");
+  // The same paper/accent pairs the theme chip swatches use, sized for a 10px dot.
+  const MINE_SWATCHES = {
+    cream: ["#c25470", "#f8f1e3"],
+    sage:  ["#5f8563", "#f5f3e9"],
+    dusk:  ["#d3a952", "#2a3040"],
+    sky:   ["#5b7fa6", "#f0f3f7"],
+  };
+  const OCCASION_WORDS = {
+    justBecause: "Just because",
+    thinkingOfYou: "Thinking of you",
+    birthday: "Birthday",
+    congrats: "Congrats",
+    thankYou: "Thank you",
+    missYou: "Miss you",
+  };
+  function readMyCards() {
+    try {
+      const list = JSON.parse(localStorage.getItem(MY_CARDS_KEY) || "[]");
+      return Array.isArray(list) ? list : [];
+    } catch (err) { return []; }
+  }
+  function rememberCard(entry) {
+    try {
+      const list = [entry].concat(readMyCards()).slice(0, 50);
+      localStorage.setItem(MY_CARDS_KEY, JSON.stringify(list));
+    } catch (err) {} // storage blocked: the card is still minted, just not listed
+  }
+  function shortDate(iso) {
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    } catch (err) { return ""; }
+  }
+  function renderMyCards() {
+    let list = [];
+    try { list = readMyCards(); } catch (err) {}
+    // The stylesheet hides .mine by default, so showing needs an explicit block.
+    mineSection.style.display = list.length ? "block" : "none";
+    mineList.textContent = "";
+    list.forEach((card) => {
+      if (!card || typeof card !== "object" || typeof card.url !== "string") return;
+      const row = document.createElement("div");
+      row.className = "mine-row";
+      const dot = document.createElement("span");
+      dot.className = "mine-dot";
+      const pair = MINE_SWATCHES[card.theme] || MINE_SWATCHES.cream;
+      dot.style.background = "radial-gradient(circle, " + pair[0] + " 0 3px, " + pair[1] + " 3px)";
+      const name = document.createElement("span");
+      name.className = "mine-name";
+      name.textContent = typeof card.name === "string" ? card.name : "";
+      const occ = document.createElement("span");
+      occ.className = "mine-occ";
+      occ.textContent = OCCASION_WORDS[card.occasion] || OCCASION_WORDS.justBecause;
+      const date = document.createElement("span");
+      date.className = "mine-date";
+      date.textContent = shortDate(card.at);
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.className = "mine-act";
+      copy.textContent = "Copy";
+      copy.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(card.url); } catch (err) {}
+        copy.textContent = "Copied";
+        setTimeout(() => { copy.textContent = "Copy"; }, 1500);
+      });
+      const open = document.createElement("a");
+      open.className = "mine-act";
+      open.textContent = "Open";
+      open.href = card.url;
+      open.target = "_blank";
+      open.rel = "noopener";
+      row.appendChild(dot);
+      row.appendChild(name);
+      row.appendChild(occ);
+      row.appendChild(date);
+      row.appendChild(copy);
+      row.appendChild(open);
+      mineList.appendChild(row);
+    });
+  }
+  // Forgetting is destructive enough to earn a second tap; the arm relaxes
+  // after 4s so a stray click never quietly deletes the list.
+  let forgetTimer = 0;
+  mineForget.addEventListener("click", () => {
+    if (!forgetTimer) {
+      mineForget.textContent = "sure? tap again";
+      forgetTimer = setTimeout(() => {
+        forgetTimer = 0;
+        mineForget.textContent = "forget these";
+      }, 4000);
+      return;
+    }
+    clearTimeout(forgetTimer);
+    forgetTimer = 0;
+    mineForget.textContent = "forget these";
+    try { localStorage.removeItem(MY_CARDS_KEY); } catch (err) {}
+    renderMyCards();
+  });
+
   restoreDraft();
+  renderMyCards();
 </script>
 </body>
 </html>

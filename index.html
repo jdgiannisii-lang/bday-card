@@ -996,6 +996,7 @@
       <button type="button" class="dchip" data-fx="petals">Petals</button>
       <button type="button" class="dchip" data-fx="sparkles">Sparkles</button>
       <button type="button" class="dchip" data-fx="balloons">Balloons</button>
+      <button type="button" class="dchip" data-fx="fireflies">Fireflies</button>
     </div>
     <div class="demo-chips" id="emChips">
       <button type="button" class="dchip" data-em="love" aria-pressed="true">🥰 Love</button>
@@ -1175,11 +1176,12 @@
      hand coded variants only, no new effect code). window.CARD_EFFECT is set by
      the engine bridge from the card row before the card is opened. */
   function configFor(effect) {
-    if (effect === "confetti") return { hearts: 10, petals: 10, confetti: 150, foil: 40, sparkles: 18, balloons: 0,  ambientPetals: 6 };
-    if (effect === "petals")   return { hearts: 8,  petals: 90, confetti: 14,  foil: 10, sparkles: 10, balloons: 0,  ambientPetals: 14 };
-    if (effect === "sparkles") return { hearts: 6,  petals: 6,  confetti: 8,   foil: 70, sparkles: 90, balloons: 0,  ambientPetals: 8 };
-    if (effect === "balloons") return { hearts: 16, petals: 8,  confetti: 30,  foil: 22, sparkles: 18, balloons: 16, ambientPetals: 7 };
-    return { hearts: 60, petals: 22, confetti: 40, foil: 20, sparkles: 16, balloons: 0, ambientPetals: 9 }; /* hearts (default) */
+    if (effect === "confetti")  return { hearts: 10, petals: 10, confetti: 150, foil: 40, sparkles: 18, balloons: 0,  fireflies: 0,  ambientPetals: 6 };
+    if (effect === "petals")    return { hearts: 8,  petals: 90, confetti: 14,  foil: 10, sparkles: 10, balloons: 0,  fireflies: 0,  ambientPetals: 14 };
+    if (effect === "sparkles")  return { hearts: 6,  petals: 6,  confetti: 8,   foil: 70, sparkles: 90, balloons: 0,  fireflies: 0,  ambientPetals: 8 };
+    if (effect === "balloons")  return { hearts: 16, petals: 8,  confetti: 30,  foil: 22, sparkles: 18, balloons: 16, fireflies: 0,  ambientPetals: 7 };
+    if (effect === "fireflies") return { hearts: 4,  petals: 6,  confetti: 6,   foil: 8,  sparkles: 12, balloons: 0,  fireflies: 46, ambientPetals: 6 };
+    return { hearts: 60, petals: 22, confetti: 40, foil: 20, sparkles: 16, balloons: 0, fireflies: 0, ambientPetals: 9 }; /* hearts (default) */
   }
   var CONFIG = configFor(window.CARD_EFFECT);
 
@@ -1247,6 +1249,7 @@
       petals:   ["#e6b3bf", "#f3dca0", "#e58a64"],
       balloons: ["#c25470", "#e58a64", "#e6b3bf", "#cba455", "#d97a8e"],
       sparkles: ["#f3dca0", "#fff4d2", "#cba455", "#edcd80"],
+      fireflies: ["#f3dca0", "#ffe9b3", "#edcd80"],
       foilBits: ["#f3dca0", "#cba455", "#fff4d2"]
     },
     sage: {
@@ -1255,6 +1258,7 @@
       petals:   ["#c9d6c0", "#e9ddb2", "#8ca87c"],
       balloons: ["#5f8563", "#b0765a", "#c9d6c0", "#cba455", "#8ca87c"],
       sparkles: ["#f3dca0", "#fff4d2", "#cba455", "#edcd80"],
+      fireflies: ["#e9ddb2", "#f3dca0", "#cfe0b8"],
       foilBits: ["#f3dca0", "#cba455", "#fff4d2"]
     },
     dusk: {
@@ -1263,6 +1267,7 @@
       petals:   ["#56617c", "#8d9bbd", "#c77e8a"],
       balloons: ["#d3a952", "#c77e8a", "#8d9bbd", "#cfa54e", "#56617c"],
       sparkles: ["#f0d795", "#fff4d2", "#cfa54e", "#edcd80"],
+      fireflies: ["#f0d795", "#ffe9a8", "#cfa54e"],
       foilBits: ["#f0d795", "#cfa54e", "#fff4d2"]
     },
     sky: {
@@ -1271,6 +1276,7 @@
       petals:   ["#c3d2e2", "#dee7f0", "#8aa6c4"],
       balloons: ["#5b7fa6", "#c98a95", "#c3d2e2", "#b3bfcc", "#8aa6c4"],
       sparkles: ["#eef1f5", "#ffffff", "#b3bfcc", "#dbe3ec"],
+      fireflies: ["#eef1f5", "#dbe9f7", "#b3bfcc"],
       foilBits: ["#eef1f5", "#b3bfcc", "#ffffff"]
     }
   };
@@ -1399,6 +1405,16 @@
         size: rand(15, 24), rot: rand(-.18, .18), vr: rand(-.01, .01),
         sway: rand(0, 6.28), color: pick(PALETTE.balloons),
         life: 1, decay: rand(.0016, .003) });
+    }
+    /* Fireflies: slow glowing motes that inhabit the whole scene rather than
+       bursting from the center. No gravity, a gentle wander, and a long life
+       (they linger eight to fourteen seconds, then fade). */
+    for (i = 0; i < (CONFIG.fireflies || 0); i++) {
+      particles.push({ kind: "firefly", x: rand(0, W), y: rand(H * .15, H * .95),
+        vx: rand(-.35, .35), vy: rand(-.3, .3), g: 0,
+        size: rand(1.5, 3.2), rot: 0, vr: 0,
+        sway: rand(0, 6.28), tw: rand(0, 6.28),
+        color: pick(PALETTE.fireflies), life: 1, decay: rand(.0012, .002) });
     }
     startLoop();
   }
@@ -1670,7 +1686,15 @@
       // they float off the top; everything else falls and dies off the bottom.
       // (A single shared cull here once killed most balloons on their first
       // frame, and deleted tall-tossed hearts that would have fallen back in.)
-      var gone = p.kind === "balloon" ? (p.y < -p.size * 2.2 - 20) : (p.y > H + 40);
+      // Fireflies never leave the scene at all: they wrap softly at every
+      // edge and die only when their long life runs out.
+      if (p.kind === "firefly") {
+        if (p.x < -20) p.x = W + 20; else if (p.x > W + 20) p.x = -20;
+        if (p.y < -20) p.y = H + 20; else if (p.y > H + 20) p.y = -20;
+      }
+      var gone = p.kind === "balloon" ? (p.y < -p.size * 2.2 - 20)
+               : p.kind === "firefly" ? false
+               : (p.y > H + 40);
       if (gone || p.life <= 0) { p.life = 0; continue; }
       alive++;
 
@@ -1729,6 +1753,20 @@
         ctx.beginPath();
         ctx.ellipse(-bs * .28, -bs * .32, bs * .16, bs * .26, -0.5, 0, Math.PI * 2);
         ctx.fill();
+      } else if (p.kind === "firefly") {
+        // A glowing mote: the twinkle drives a wide soft halo and a bright
+        // core, both drawn additively so they read as light against the
+        // paper (the restore() below resets the composite op, as with
+        // sparkles).
+        p.tw += .06;
+        var glow = .25 + .75 * (.5 + .5 * Math.sin(p.tw));
+        var fa = ctx.globalAlpha;
+        ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = fa * glow * .22;
+        ctx.beginPath(); ctx.arc(0, 0, p.size * 4, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = fa * glow;
+        ctx.beginPath(); ctx.arc(0, 0, p.size, 0, Math.PI * 2); ctx.fill();
       } else {
         p.tw += .35;
         ctx.globalAlpha *= (.4 + .6 * (.5 + .5 * Math.sin(p.tw)));
