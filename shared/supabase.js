@@ -42,7 +42,7 @@ async function mintToken() {
 
 // saveCard(formData)
 //   formData: {
-//     recipientName, message, signoff, occasion, effect, emojis,
+//     recipientName, message, signoff, occasion, effect, emojis, theme,
 //     photoBlobs (Blob[] in strip order) or photoBlob (single, back-compat),
 //     whoSentYou, refCardId, generation
 //   }
@@ -106,6 +106,12 @@ export async function saveCard(formData) {
       signoff: data.signoff || "",
       photos: photo_urls,
       emojis: Array.isArray(data.emojis) ? data.emojis.filter(Boolean).slice(0, 8) : [],
+      // Sender-picked theme, validated against the same allowlist the card
+      // view enforces (the row is untrusted either way; cream is the default).
+      theme: ["cream", "sage", "dusk", "sky"].indexOf(data.theme) !== -1 ? data.theme : "cream",
+      // Optional age for the birthday medallion (integers 1 to 120 only; the
+      // bridge re-validates on read because the row is untrusted).
+      age: Number.isInteger(data.age) && data.age >= 1 && data.age <= 120 ? data.age : null,
       // Self-reported propagation evidence for the ledger. Stored in the row
       // (never sent to analytics: it is free-text PII).
       whoSentYou: data.whoSentYou || "",

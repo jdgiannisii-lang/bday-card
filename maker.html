@@ -251,6 +251,14 @@
         </div>
       </div>
 
+      <!-- Only for birthdays: an optional age that becomes the little gold
+           medallion on the cover. Hidden until the Birthday chip is picked. -->
+      <div class="field" id="ageField" style="display:none">
+        <label class="lbl" for="age">Their age (optional)</label>
+        <input type="number" id="age" name="age" min="1" max="120" inputmode="numeric" placeholder="21" />
+        <div class="hint">Shows in a small gold medallion on the cover.</div>
+      </div>
+
       <div class="field">
         <label class="lbl">Pick the magic</label>
         <div class="chips" id="effectChips" role="group">
@@ -406,7 +414,12 @@
       setter(chip.getAttribute("data-value"));
     });
   }
-  wireChips("occasionChips", (v) => { occasion = v; });
+  const ageField = document.getElementById("ageField");
+  wireChips("occasionChips", (v) => {
+    occasion = v;
+    // The age medallion only makes sense on a birthday cover.
+    if (ageField) ageField.style.display = v === "birthday" ? "" : "none";
+  });
   wireChips("effectChips", (v) => { effect = v; });
   wireChips("themeChips", (v) => { theme = v; });
 
@@ -544,6 +557,10 @@
     const message = document.getElementById("message").value.trim();
     const signoff = document.getElementById("signoff").value.trim();
     const whoSentYou = document.getElementById("whoSentYou").value.trim();
+    const ageRaw = parseInt(document.getElementById("age").value, 10);
+    const age = occasion === "birthday" && Number.isInteger(ageRaw) && ageRaw >= 1 && ageRaw <= 120
+      ? ageRaw
+      : null;
     const consent = consentBox.checked;
     const chosenEmojis = currentEmojis();
 
@@ -558,7 +575,7 @@
     making.textContent = "Making your link...";
 
     const result = await saveCard({
-      recipientName, message, signoff, whoSentYou,
+      recipientName, message, signoff, whoSentYou, age,
       occasion, effect, theme, emojis: chosenEmojis,
       photoBlobs: photoBlobs.map((p) => p.blob),
       refCardId, generation,

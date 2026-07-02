@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>A card for you</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f8f1e3'/%3E%3Cpath d='M16 24.5C10 20 7.5 16.6 7.5 13.4 7.5 10.9 9.4 9 11.8 9c1.7 0 3.2.9 4.2 2.4C17 9.9 18.5 9 20.2 9c2.4 0 4.3 1.9 4.3 4.4 0 3.2-2.5 6.6-8.5 11.1z' fill='%23c25470'/%3E%3C/svg%3E" />
 
 <script>
   // This page is served at the app root on localhost (card.html?c=...) but at the
@@ -51,21 +52,82 @@
 </noscript>
 
 <style>
-  /* Design tokens shared by every page (landing, maker, card view). */
+  /* Design tokens shared by every page (landing, maker, card view). These are
+     the cream theme (the default look); the [data-theme] blocks below re-point
+     ONLY these properties, so the whole page retints from one attribute. */
   :root {
-    --paper:      #f8f1e3;
-    --paper-warm: #f3e8d4;
-    --paper-edge: #e7d8bf;
-    --ink:        #46362d;
-    --ink-soft:   #7a685b;
-    --rose:       #c25470;
-    --rose-deep:  #9e3a55;
-    --blush:      #e6b3bf;
-    --coral:      #e58a64;
-    --gold-hi:    #f3dca0;
-    --gold-mid:   #cba455;
-    --gold-lo:    #9c7833;
+    --paper:       #f8f1e3;
+    --paper-warm:  #f3e8d4;
+    --paper-edge:  #e7d8bf;
+    --ink:         #46362d;
+    --ink-soft:    #7a685b;
+    --accent:      #c25470;
+    --accent-deep: #9e3a55;
+    --tint:        #e6b3bf;
+    --foil-hi:     #f3dca0;
+    --foil-mid:    #cba455;
+    --foil-lo:     #9c7833;
+    --cover-hi:    #fbf3e6;
+    --bg-0:        #fbf4e8;
+    --bg-1:        #f3e3d3;
+    --bg-2:        #ecd8c4;
+    --shadow:      112,72,48; /* the warm-brown shadow ink, as an rgb triplet */
     --radius: 14px;
+  }
+
+  /* Sender-picked themes (content.theme on the card row). Each block overrides
+     only the custom properties above; cream needs no block because :root IS
+     cream. The engine's __applyTheme sets data-theme on <html>. */
+  html[data-theme="sage"] {
+    --paper:       #f5f3e9;
+    --paper-warm:  #edeadb;
+    --paper-edge:  #d8d5bd;
+    --ink:         #3c4334;
+    --ink-soft:    #6e7460;
+    --accent:      #5f8563;
+    --accent-deep: #46684c;
+    --tint:        #c9d6c0;
+    --cover-hi:    #f9f7ee;
+    --bg-0:        #f7f5ea;
+    --bg-1:        #e9e9d6;
+    --bg-2:        #dbdec6;
+    --shadow:      84,94,66;
+  }
+  html[data-theme="dusk"] {
+    --paper:       #2a3040;
+    --paper-warm:  #232938;
+    --paper-edge:  #1b2130;
+    --ink:         #ece3cf;
+    --ink-soft:    #a9a28d;
+    --accent:      #d3a952;
+    --accent-deep: #b8903c;
+    --tint:        #56617c;
+    --foil-hi:     #f0d795;
+    --foil-mid:    #cfa54e;
+    --foil-lo:     #97742e;
+    --cover-hi:    #333a4d;
+    --bg-0:        #262c3c;
+    --bg-1:        #1d2331;
+    --bg-2:        #151a26;
+    --shadow:      4,7,14;
+  }
+  html[data-theme="sky"] {
+    --paper:       #f0f3f7;
+    --paper-warm:  #e7ecf2;
+    --paper-edge:  #d2dbe4;
+    --ink:         #35404e;
+    --ink-soft:    #68798c;
+    --accent:      #5b7fa6;
+    --accent-deep: #41628a;
+    --tint:        #c3d2e2;
+    --foil-hi:     #eef1f5;
+    --foil-mid:    #b3bfcc;
+    --foil-lo:     #8291a3;
+    --cover-hi:    #f6f9fc;
+    --bg-0:        #f3f7fb;
+    --bg-1:        #e2eaf2;
+    --bg-2:        #d3dfe9;
+    --shadow:      62,84,110;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -76,7 +138,7 @@
     color: var(--ink);
     overflow: hidden;
     background:
-      radial-gradient(1100px 760px at 50% 22%, #fbf4e8 0%, #f3e3d3 46%, #ecd8c4 100%);
+      radial-gradient(1100px 760px at 50% 22%, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
     background-attachment: fixed;
   }
 
@@ -155,8 +217,8 @@
     background:
       linear-gradient(90deg, var(--paper-edge) 0%, var(--paper) 7%, var(--paper) 100%),
       var(--paper);
-    box-shadow: inset 14px 0 26px -18px rgba(70,54,45,.5),
-                0 26px 50px rgba(112,72,48,.26);
+    box-shadow: inset 14px 0 26px -18px rgba(var(--shadow),.5),
+                0 26px 50px rgba(var(--shadow),.26);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -184,7 +246,7 @@
     position: absolute;
     left: 0; right: 0; bottom: 0;
     height: 72px;
-    background: linear-gradient(to top, var(--paper) 30%, rgba(248,241,227,0));
+    background: linear-gradient(to top, var(--paper) 30%, color-mix(in srgb, var(--paper) 0%, transparent));
     border-radius: 0 0 var(--radius) var(--radius);
     pointer-events: none;
     opacity: 0;
@@ -198,7 +260,7 @@
     flex-direction: column;
     align-items: center;
     gap: 0;
-    font-family: 'Caveat', cursive;
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive;
     font-size: 15px;
     color: var(--ink-soft);
     opacity: 0;
@@ -207,10 +269,10 @@
     z-index: 3;
   }
   .scroll-cue span {
-    background: rgba(248,241,227,.92);
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
     border-radius: 999px;
     padding: 0 10px 2px;
-    box-shadow: 0 0 10px 4px rgba(248,241,227,.85);
+    box-shadow: 0 0 10px 4px color-mix(in srgb, var(--paper) 85%, transparent);
   }
   .scroll-cue svg {
     width: 17px; height: 17px;
@@ -230,7 +292,7 @@
     background: #fffdf8;
     padding: 9px 9px 30px;
     border-radius: 3px;
-    box-shadow: 0 10px 20px rgba(70,54,45,.22), 0 2px 5px rgba(70,54,45,.18);
+    box-shadow: 0 10px 20px rgba(var(--shadow),.22), 0 2px 5px rgba(var(--shadow),.18);
     transform: rotate(-3deg);
     opacity: 0;
   }
@@ -246,7 +308,7 @@
   .polaroid .cap {
     position: absolute;
     left: 0; right: 0; bottom: 7px;
-    font-family: 'Caveat', cursive;
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive;
     font-size: 17px;
     color: var(--ink-soft);
   }
@@ -258,7 +320,7 @@
     background: linear-gradient(180deg, rgba(216,170,120,.42), rgba(216,170,120,.28));
     border-left: 1px dashed rgba(255,255,255,.4);
     border-right: 1px dashed rgba(255,255,255,.4);
-    box-shadow: 0 1px 2px rgba(70,54,45,.12);
+    box-shadow: 0 1px 2px rgba(var(--shadow),.12);
   }
 
   /* Photo-booth strip (2+ photos). The reveal wraps the strip; on open the engine
@@ -276,14 +338,14 @@
     background: #fffdf8;
     padding: 10px 10px 16px;
     border-radius: 4px;
-    box-shadow: 0 12px 24px rgba(70,54,45,.24), 0 2px 6px rgba(70,54,45,.18);
+    box-shadow: 0 12px 24px rgba(var(--shadow),.24), 0 2px 6px rgba(var(--shadow),.18);
     transform: rotate(-1deg);
   }
   /* Subtle film perforations down both white margins. */
   .photostrip::before, .photostrip::after {
     content: "";
     position: absolute; top: 9px; bottom: 9px; width: 4px;
-    background-image: radial-gradient(circle, rgba(70,54,45,.15) 0 1.5px, transparent 1.7px);
+    background-image: radial-gradient(circle, rgba(var(--shadow),.15) 0 1.5px, transparent 1.7px);
     background-size: 4px 11px; background-repeat: repeat-y;
   }
   .photostrip::before { left: 3px; }
@@ -295,7 +357,7 @@
     overflow: hidden;
     background: #eccdd2;
     border-radius: 1px;
-    box-shadow: inset 0 0 0 1px rgba(70,54,45,.06);
+    box-shadow: inset 0 0 0 1px rgba(var(--shadow),.06);
   }
   .strip-cell:last-child { margin-bottom: 0; }
   .strip-cell img { width: 100%; height: 100%; object-fit: cover; object-position: center 42%; display: block; }
@@ -308,17 +370,17 @@
   }
 
   .greeting {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif;
     font-weight: 600;
     font-size: clamp(26px, 7vw, 34px);
     line-height: 1.04;
-    color: var(--rose-deep);
+    color: var(--accent-deep);
     margin: 2px 0 0;
     opacity: 0;
   }
 
   .note {
-    font-family: 'Caveat', cursive;
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive;
     font-size: clamp(18px, 4.6vw, 21px);
     line-height: 1.5;
     color: var(--ink);
@@ -330,7 +392,7 @@
 
   .signoff {
     align-self: flex-end;
-    font-family: 'Caveat', cursive;
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive;
     font-size: clamp(19px, 5vw, 23px);
     color: var(--ink);
     margin-top: 2px;
@@ -353,13 +415,13 @@
     transition: transform 1.15s cubic-bezier(.62,.04,.12,1);
     z-index: 3;
     background:
-      linear-gradient(150deg, #fbf3e6 0%, var(--paper) 48%, var(--paper-warm) 100%);
-    box-shadow: 0 26px 50px rgba(112,72,48,.3),
+      linear-gradient(150deg, var(--cover-hi) 0%, var(--paper) 48%, var(--paper-warm) 100%);
+    box-shadow: 0 26px 50px rgba(var(--shadow),.3),
                 inset 0 0 0 1px rgba(255,255,255,.35);
   }
   .card.opened .cover {
     transform: rotateY(-164deg) translateZ(1px);
-    box-shadow: -22px 16px 44px rgba(90,52,34,.34);
+    box-shadow: -22px 16px 44px rgba(var(--shadow),.34);
   }
   .cover .frame {
     position: absolute;
@@ -368,7 +430,7 @@
     border: 1.5px solid transparent;
     background:
       linear-gradient(var(--paper), var(--paper)) padding-box,
-      linear-gradient(135deg, var(--gold-lo), var(--gold-hi), var(--gold-mid)) border-box;
+      linear-gradient(135deg, var(--foil-lo), var(--foil-hi), var(--foil-mid)) border-box;
     opacity: .85;
   }
 
@@ -382,18 +444,18 @@
     border: 1.5px solid transparent;
     background:
       linear-gradient(var(--paper), var(--paper)) padding-box,
-      linear-gradient(135deg, var(--gold-lo), var(--gold-hi), var(--gold-mid)) border-box;
-    box-shadow: 0 2px 6px rgba(112,72,48,.18);
+      linear-gradient(135deg, var(--foil-lo), var(--foil-hi), var(--foil-mid)) border-box;
+    box-shadow: 0 2px 6px rgba(var(--shadow),.18);
     z-index: 4;
   }
   .milestone span {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif;
     font-weight: 600;
     font-style: italic;
     font-size: 21px;
     line-height: 1;
-    background: linear-gradient(100deg, var(--gold-lo) 0%, var(--gold-mid) 30%,
-                #edcd80 50%, var(--gold-mid) 70%, var(--gold-lo) 100%);
+    background: linear-gradient(100deg, var(--foil-lo) 0%, var(--foil-mid) 30%,
+                #edcd80 50%, var(--foil-mid) 70%, var(--foil-lo) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -413,7 +475,7 @@
     padding: 30px;
   }
   .eyebrow {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
     font-weight: 500;
     letter-spacing: .42em;
     text-transform: uppercase;
@@ -422,14 +484,14 @@
     padding-left: .42em;
   }
   .cover-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif;
     font-weight: 600;
     font-style: italic;
     font-size: clamp(40px, 13vw, 60px);
     line-height: 1.06;
     padding-bottom: .14em;
-    background: linear-gradient(100deg, var(--gold-lo) 0%, var(--gold-mid) 22%,
-                #edcd80 40%, var(--gold-mid) 58%, var(--gold-lo) 82%, var(--gold-mid) 100%);
+    background: linear-gradient(100deg, var(--foil-lo) 0%, var(--foil-mid) 22%,
+                #edcd80 40%, var(--foil-mid) 58%, var(--foil-lo) 82%, var(--foil-mid) 100%);
     background-size: 240% 100%;
     -webkit-background-clip: text;
     background-clip: text;
@@ -447,8 +509,10 @@
     position: relative;
     width: 84px; height: 84px;
     border-radius: 49% 51% 52% 48% / 48% 50% 50% 52%;
+    /* The wax stays red on every theme (a real seal is not dyed to match the
+       paper), so these are literals, not the accent vars. */
     background:
-      radial-gradient(60% 55% at 38% 32%, #c5546c 0%, var(--rose) 36%, var(--rose-deep) 78%, #7e2c43 100%);
+      radial-gradient(60% 55% at 38% 32%, #c5546c 0%, #c25470 36%, #9e3a55 78%, #7e2c43 100%);
     box-shadow:
       0 8px 16px rgba(126,44,67,.5),
       inset 0 2px 4px rgba(255,255,255,.32),
@@ -469,7 +533,7 @@
     opacity: .9;
   }
   .open-label {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
     letter-spacing: .34em;
     text-transform: uppercase;
     font-size: 10.5px;
@@ -479,7 +543,7 @@
   }
   .card.opened .open-label { opacity: 0; }
   .dedication {
-    font-family: 'Caveat', cursive;
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive;
     font-size: clamp(15px, 4vw, 18px);
     line-height: 1.32;
     color: var(--ink-soft);
@@ -493,7 +557,7 @@
     background: linear-gradient(150deg, var(--paper-warm), var(--paper-edge));
     display: grid; place-items: center;
   }
-  .cover-back svg { width: 64px; height: 64px; fill: var(--blush); opacity: .8; }
+  .cover-back svg { width: 64px; height: 64px; fill: var(--tint); opacity: .8; }
 
   #fx {
     position: fixed; inset: 0;
@@ -510,22 +574,22 @@
     bottom: 18px; left: 50%;
     transform: translateX(-50%) translateY(14px);
     z-index: 60;
-    border: 1px solid rgba(203,164,85,.28);
-    background: rgba(248,241,227,.9);
+    border: 1px solid color-mix(in srgb, var(--foil-mid) 42%, transparent);
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     border-radius: 999px;
-    box-shadow: 0 6px 18px rgba(112,72,48,.18);
+    box-shadow: 0 6px 18px rgba(var(--shadow),.18);
     cursor: pointer;
-    font-family: 'Caveat', cursive;
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive;
     font-size: 19px;
-    color: var(--rose-deep);
+    color: var(--accent-deep);
     opacity: 0; pointer-events: none;
     transition: opacity .5s, transform .5s;
     padding: 4px 16px 6px;
   }
   .replay.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-  .replay:hover { color: var(--rose); }
+  .replay:hover { color: var(--accent); }
 
   /* Surface C: the recipient CTA. Caveat, rose, a single underline, on the pill. */
   .cta {
@@ -540,34 +604,34 @@
     text-align: center;
     opacity: 0; pointer-events: none;
     transition: opacity .5s, transform .5s;
-    background: rgba(248,241,227,.92);
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
-    border: 1px solid rgba(203,164,85,.32);
+    border: 1px solid color-mix(in srgb, var(--foil-mid) 48%, transparent);
     border-radius: 18px;
-    box-shadow: 0 10px 28px rgba(112,72,48,.2);
+    box-shadow: 0 10px 28px rgba(var(--shadow),.2);
     padding: 10px 22px 12px;
   }
   .cta.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
   .cta a {
-    font-family: 'Caveat', cursive;
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive;
     font-size: 21px;
-    color: var(--rose-deep);
+    color: var(--accent-deep);
     text-decoration: none;
-    border-bottom: 1.5px solid var(--rose);
+    border-bottom: 1.5px solid var(--accent);
     padding: 0 2px 1px;
   }
-  .cta a:hover { color: var(--rose); }
+  .cta a:hover { color: var(--accent); }
   .cta .cta-sub {
     display: block; margin-top: 4px;
-    font-family: 'Caveat', cursive; font-size: 15px; color: var(--ink-soft);
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive; font-size: 15px; color: var(--ink-soft);
   }
 
   /* Soft retry message if the card fetch fails (paused project, offline). */
   .retry {
     position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
     z-index: 60; display: none;
-    font-family: 'Caveat', cursive; font-size: 17px; color: var(--ink-soft); text-align: center;
+    font-family: 'Caveat', 'Segoe Print', 'Lucida Handwriting', cursive; font-size: 17px; color: var(--ink-soft); text-align: center;
   }
   .retry.show { display: block; }
 
@@ -576,7 +640,7 @@
     position: absolute;
     width: 12px; height: 12px;
     border-radius: 0 76% 0 76%;
-    background: var(--blush);
+    background: var(--tint);
     opacity: .35;
     bottom: -24px;
     animation: drift linear infinite;
@@ -643,7 +707,7 @@
 
       <div class="face cover">
         <div class="frame"></div>
-        <div class="milestone" aria-hidden="true" style="display:none"><span>18</span></div>
+        <div class="milestone" aria-hidden="true" style="display:none"><span></span></div>
         <div class="cover-content">
           <div class="eyebrow">for you</div>
           <div class="cover-title">Just<br />because</div>
@@ -739,8 +803,46 @@
   resize();
   window.addEventListener("resize", resize);
 
-  var HEART_COLORS   = ["#c25470", "#9e3a55", "#e58a64", "#d97a8e"];
-  var CONFETTI_COLORS = ["#f3e8d4", "#cba455", "#e58a64", "#c25470", "#e6b3bf", "#f3dca0"];
+  /* Particle palettes per sender-picked theme. The CSS side of each theme
+     lives in the [data-theme] blocks up in the stylesheet; this table keeps
+     the painted colors in step with the paper. petals[0..1] feed the drizzle,
+     all three feed the ambient DOM petals. PALETTE is swapped by
+     window.__applyTheme once the card row names a theme. */
+  var THEME_PALETTES = {
+    cream: {
+      hearts:   ["#c25470", "#9e3a55", "#e58a64", "#d97a8e"],
+      confetti: ["#f3e8d4", "#cba455", "#e58a64", "#c25470", "#e6b3bf", "#f3dca0"],
+      petals:   ["#e6b3bf", "#f3dca0", "#e58a64"],
+      balloons: ["#c25470", "#e58a64", "#e6b3bf", "#cba455", "#d97a8e"],
+      sparkles: ["#f3dca0", "#fff4d2", "#cba455", "#edcd80"],
+      foilBits: ["#f3dca0", "#cba455", "#fff4d2"]
+    },
+    sage: {
+      hearts:   ["#5f8563", "#46684c", "#8ca87c", "#b0765a"],
+      confetti: ["#edeadb", "#cba455", "#8ca87c", "#5f8563", "#c9d6c0", "#f3dca0"],
+      petals:   ["#c9d6c0", "#e9ddb2", "#8ca87c"],
+      balloons: ["#5f8563", "#b0765a", "#c9d6c0", "#cba455", "#8ca87c"],
+      sparkles: ["#f3dca0", "#fff4d2", "#cba455", "#edcd80"],
+      foilBits: ["#f3dca0", "#cba455", "#fff4d2"]
+    },
+    dusk: {
+      hearts:   ["#d3a952", "#b8903c", "#c77e8a", "#8d9bbd"],
+      confetti: ["#f0d795", "#cfa54e", "#c77e8a", "#8d9bbd", "#ece3cf", "#56617c"],
+      petals:   ["#56617c", "#8d9bbd", "#c77e8a"],
+      balloons: ["#d3a952", "#c77e8a", "#8d9bbd", "#cfa54e", "#56617c"],
+      sparkles: ["#f0d795", "#fff4d2", "#cfa54e", "#edcd80"],
+      foilBits: ["#f0d795", "#cfa54e", "#fff4d2"]
+    },
+    sky: {
+      hearts:   ["#5b7fa6", "#41628a", "#8aa6c4", "#c98a95"],
+      confetti: ["#e7ecf2", "#b3bfcc", "#8aa6c4", "#5b7fa6", "#c3d2e2", "#eef1f5"],
+      petals:   ["#c3d2e2", "#dee7f0", "#8aa6c4"],
+      balloons: ["#5b7fa6", "#c98a95", "#c3d2e2", "#b3bfcc", "#8aa6c4"],
+      sparkles: ["#eef1f5", "#ffffff", "#b3bfcc", "#dbe3ec"],
+      foilBits: ["#eef1f5", "#b3bfcc", "#ffffff"]
+    }
+  };
+  var PALETTE = THEME_PALETTES.cream;
 
   var particles = [];
   function rand(a, b) { return a + Math.random() * (b - a); }
@@ -780,28 +882,28 @@
       particles.push({ kind: "heart", x: ox + rand(-26, 26), y: oy + rand(-26, 26),
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(2, 6), g: rand(.12, .24),
         size: rand(8, 17), rot: rand(0, 6.28), vr: rand(-.16, .16),
-        color: pick(HEART_COLORS), life: 1, decay: rand(.006, .012) });
+        color: pick(PALETTE.hearts), life: 1, decay: rand(.006, .012) });
     }
     for (i = 0; i < CONFIG.confetti; i++) {
       a = rand(0, Math.PI * 2); sp = rand(4, 14);
       particles.push({ kind: "confetti", x: ox + rand(-22, 22), y: oy + rand(-22, 22),
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(1, 5), g: rand(.12, .22),
         w: rand(5, 9), h: rand(8, 14), rot: rand(0, 6.28), vr: rand(-.3, .3),
-        flutter: rand(0, 6.28), color: pick(CONFETTI_COLORS), life: 1, decay: rand(.006, .013) });
+        flutter: rand(0, 6.28), color: pick(PALETTE.confetti), life: 1, decay: rand(.006, .013) });
     }
     for (i = 0; i < CONFIG.petals; i++) {
       a = rand(0, Math.PI * 2); sp = rand(2, 8);
       particles.push({ kind: "petal", x: ox + rand(-20, 20), y: oy + rand(-20, 20),
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(1, 4), g: rand(.05, .12),
         size: rand(7, 12), rot: rand(0, 6.28), vr: rand(-.1, .1),
-        sway: rand(0, 6.28), color: "#e6b3bf", life: 1, decay: rand(.004, .009) });
+        sway: rand(0, 6.28), color: PALETTE.petals[0], life: 1, decay: rand(.004, .009) });
     }
     for (i = 0; i < CONFIG.foil; i++) {
       a = rand(0, Math.PI * 2); sp = rand(4, 15);
       particles.push({ kind: "foil", x: ox + rand(-16, 16), y: oy + rand(-16, 16),
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(1, 5), g: rand(.1, .2),
         size: rand(2, 4), rot: 0, vr: 0, tw: rand(0, 6.28),
-        color: pick(["#f3dca0", "#cba455", "#fff4d2"]), life: 1, decay: rand(.01, .02) });
+        color: pick(PALETTE.foilBits), life: 1, decay: rand(.01, .02) });
     }
     /* Sparkles: a gold twinkle that bursts with the rest and drifts down slowly,
        pulsing its alpha and size for a shimmer. */
@@ -811,7 +913,7 @@
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(1, 5), g: rand(.04, .12),
         size: rand(5, 13), rot: rand(0, 6.28), vr: rand(-.08, .08),
         tw: rand(0, 6.28), sway: rand(0, 6.28),
-        color: pick(["#f3dca0", "#fff4d2", "#cba455", "#edcd80"]), life: 1, decay: rand(.006, .012) });
+        color: pick(PALETTE.sparkles), life: 1, decay: rand(.006, .012) });
     }
     /* Balloons: rise from below the screen with a gentle sway, slow fade. They go
        UP (negative vy plus a slight buoyancy g), unlike every other particle. */
@@ -819,7 +921,7 @@
       particles.push({ kind: "balloon", x: rand(W * 0.1, W * 0.9), y: H + rand(10, 150),
         vx: rand(-0.5, 0.5), vy: rand(-3.2, -1.8), g: -rand(.005, .02),
         size: rand(15, 24), rot: rand(-.18, .18), vr: rand(-.01, .01),
-        sway: rand(0, 6.28), color: pick(["#c25470", "#e58a64", "#e6b3bf", "#cba455", "#d97a8e"]),
+        sway: rand(0, 6.28), color: pick(PALETTE.balloons),
         life: 1, decay: rand(.0016, .003) });
     }
     startLoop();
@@ -1005,7 +1107,7 @@
       if (document.hidden) return;
       particles.push({ kind: "petal", x: rand(0, W), y: -16, vx: rand(-.5, .5),
         vy: rand(.8, 1.8), g: .006, size: rand(7, 11), rot: rand(0, 6.28),
-        vr: rand(-.04, .04), sway: rand(0, 6.28), color: pick(["#e6b3bf", "#f3dca0"]),
+        vr: rand(-.04, .04), sway: rand(0, 6.28), color: pick([PALETTE.petals[0], PALETTE.petals[1]]),
         life: 1, decay: .0035 });
       startLoop();
     }, 420);
@@ -1110,7 +1212,7 @@
 
   function buildPetals() {
     if (reduceMotion) return;
-    var tints = ["#e6b3bf", "#f3dca0", "#e58a64"];
+    var tints = PALETTE.petals;
     var html = "";
     for (var i = 0; i < CONFIG.ambientPetals; i++) {
       var left = Math.random() * 100, dur = 14 + Math.random() * 12,
@@ -1188,6 +1290,19 @@
      after applyCardToEngine; it only swaps the existing CONFIG counts, no new
      effect code. */
   window.__applyEffectConfig = function () { CONFIG = configFor(window.CARD_EFFECT); buildPetals(); };
+
+  /* Theme setter, called by the bridge once the card row names a theme. It
+     flips the data-theme attribute (the CSS side) and swaps PALETTE (the
+     canvas side), then rebuilds the ambient petals so they retint too. The
+     row is untrusted, so anything off the allowlist falls back to cream;
+     cream clears the attribute (the :root defaults ARE cream). Idempotent. */
+  window.__applyTheme = function (name) {
+    var theme = (name === "sage" || name === "dusk" || name === "sky") ? name : "cream";
+    if (theme === "cream") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", theme);
+    PALETTE = THEME_PALETTES[theme];
+    buildPetals();
+  };
 })();
 </script>
 

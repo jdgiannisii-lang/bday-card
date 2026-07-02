@@ -155,9 +155,19 @@ export function applyCardToEngine(row, opts) {
   const coverEl = doc.querySelector(".cover-title");
   if (coverEl) setLines(coverEl, OCCASION_COVER_TITLE[occ] || OCCASION_COVER_TITLE.justBecause);
 
-  // Birthday medallion: visible only for the birthday occasion (D-04).
+  // Birthday medallion: shows the recipient's age in the gold ring, and only
+  // when the sender gave one (content.age). It used to show unconditionally on
+  // birthdays with the template's hardcoded "18", which put a stranger's age
+  // on every card. Age is untrusted row data: accept only integers 1 to 120.
   const milestoneEl = doc.querySelector(".milestone");
-  if (milestoneEl) milestoneEl.style.display = occ === "birthday" ? "" : "none";
+  if (milestoneEl) {
+    const age = Number.isInteger(content.age) && content.age >= 1 && content.age <= 120
+      ? content.age
+      : null;
+    const span = milestoneEl.querySelector("span");
+    if (span) span.textContent = age === null ? "" : String(age);
+    milestoneEl.style.display = occ === "birthday" && age !== null ? "" : "none";
+  }
 
   // Effect: select among the engine's hand coded canvas variants only. The hosted
   // engine reads window.CARD_EFFECT to bias its CONFIG; the bridge never paints,
@@ -169,6 +179,21 @@ export function applyCardToEngine(row, opts) {
     window.CARD_EFFECT = effect;
   } catch (e) {
     // No window (e.g. structural import under Node): nothing to set.
+  }
+
+  // Theme: retint the CSS custom properties and the canvas particle palettes.
+  // The engine defines window.__applyTheme synchronously in its IIFE (before
+  // this module can ever run), so the guard only covers Node structural
+  // imports. The row is untrusted: anything off the allowlist plays as cream.
+  const ALLOWED_THEMES = ["cream", "sage", "dusk", "sky"];
+  const theme = ALLOWED_THEMES.indexOf(content.theme) !== -1 ? content.theme : "cream";
+  try {
+    if (typeof window !== "undefined") {
+      window.CARD_THEME = theme;
+      if (window.__applyTheme) window.__applyTheme(theme);
+    }
+  } catch (e) {
+    // No window under Node structural import: nothing to set.
   }
 
   // Falling emojis: the sender's chosen set (content.emojis), else the engine
