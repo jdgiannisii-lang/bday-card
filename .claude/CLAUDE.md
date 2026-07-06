@@ -14,7 +14,15 @@ students sending to family. Today it is a small multi-page product:
 no-signup card maker (Supabase-backed), `card.html` is the recipient view
 (shared as `card.html?c=<token>`; `404.html` is generated at deploy as a copy
 of `card.html` for clean `/c/<token>/` links), and `rachel.html` is the
-original hand-made card that started the project (kept live).
+original hand-made card that started the project (kept live). The shipped
+surface (see README.md, the source of truth): six occasions, four themes that
+retint the whole card and its particles, six effects (incl. Fireflies), photos
+with caption or photo-booth strip, sender-picked Apple emojis, an age medallion,
+a live "See it first" preview, recipient reactions, recipient-controlled
+synthesized sound, draft autosave, message starters, a "Cards you've made" list,
+token-seeded deterministic playback, a reduced-motion still, and self-hosted
+fonts + emoji. Supabase migrations 0002/0003/0004/0005 are committed but may be
+unapplied on the live DB; the client degrades gracefully until each is run.
 
 **Core Value:** The recipient's open is sacred: a beautiful card that plays instantly in any
 browser with zero friction, where every recipient can become a sender in the

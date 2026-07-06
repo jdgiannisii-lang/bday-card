@@ -1,16 +1,50 @@
-# Status update (2026-07-01)
+# Status update (2026-07-05)
 
-This document predates the product pivot and parts of it are stale. It is kept
-as-is for history. Read it with these corrections in mind:
+Read this first; then `README.md` for the full current picture. The original
+handoff below the divider is kept for history but is almost entirely superseded.
 
-- The "PENDING TASK: tap-to-open present" at the bottom was built and then
-  intentionally removed (commit `67fe2ac`, "Remove the tap-to-open present").
-  Do not rebuild it from this doc.
-- GitHub Pages hosting is no longer pending; it is configured via
-  `.github/workflows/deploy-pages.yml`.
-- The card this document describes now lives at `rachel.html`. The root
-  `index.html` is a landing page / effects showcase, `maker.html` is the card
-  maker, and `card.html` is the recipient view.
+## What the product is now
+
+A live, multi-page card app deployed on GitHub Pages, backed by Supabase (free
+tier). `index.html` is a scrollable marketing landing whose hero is a live demo,
+`maker.html` is the no-signup maker, `card.html` is the recipient view (shared
+as `card.html?c=<token>`, also runs `?preview=1` for the live preview), and
+`rachel.html` is the frozen original card that started it all.
+
+Shipped features: six occasions (Just because, Thinking of you, Birthday,
+Congrats, Thank you, Miss you), four themes (Cream, Sage, Dusk, Sky) that retint
+everything including canvas particles, six effects (Hearts, Confetti, Petals,
+Sparkles, Balloons, Fireflies), up to five photos with a single-photo caption or
+a photo-booth strip, sender-picked Apple emojis, an age medallion, a live "See
+it first" preview, recipient reactions, recipient-controlled synthesized sound,
+draft autosave, message starters, a "Cards you've made" list, deterministic
+token-seeded playback, a reduced-motion still celebration, and self-hosted fonts
+and emoji so the recipient's open makes zero blocking third-party calls.
+
+## Working state (2026-07-05)
+
+- Active branch: `claude/project-review-improvements-a10svp`. The default and
+  deploy branch is `claude/birthday-card-animation-wr7nsu`; pushing to it
+  publishes the live site. Both branches currently point at the same commit.
+- The tree is clean. Everything is committed, pushed, and deployed live.
+- The Stage 0 validation gate was retired by founder decision (2026-07-02):
+  build the roadmap directly, metrics inform but no longer block.
+
+## The one thing a fresh session must know
+
+The app is written so a missing Supabase migration never breaks the open; it
+hides or downgrades a feature instead. Migrations `0002` (security),
+`0003`/`0005` (occasion/effect allowlists), and `0004` (reactions) are committed
+but may not be applied to the live database yet. See the migrations table in
+`README.md`. If reactions look "missing" or newer occasions/effects get
+rejected on insert, that is the expected pre-migration state, not a bug.
+
+## Original handoff corrections (still true)
+
+- The "PENDING TASK: tap-to-open present" below was built and then intentionally
+  removed (commit `67fe2ac`). Do not rebuild it.
+- Hosting is configured via `.github/workflows/deploy-pages.yml`.
+- The card this document describes now lives at `rachel.html`.
 
 Everything below is the original handoff, untouched.
 
